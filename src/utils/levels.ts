@@ -10,6 +10,7 @@ export interface LevelConfig {
   gridSize: number
   sequenceLength: number
   showTimeMs: number
+  mode: 'normal' | 'emoji'
 }
 
 // Bölüm aralığı listesinden verilen level için değer seçer
@@ -41,5 +42,6 @@ export function getLevelConfig(level: number): LevelConfig {
       (range) => range.length,
     ),
     showTimeMs: getRangeValue(SHOW_TIMES_MS, clampedLevel, (range) => range.ms),
+    mode: clampedLevel <= 2 ? 'normal' : 'emoji',
   }
 }

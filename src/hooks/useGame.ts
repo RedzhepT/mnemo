@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { MIN_ROUNDS_TO_COMPLETE } from '../utils/constants'
 import { getLevelConfig } from '../utils/levels'
 import { calculateScore } from '../utils/scoring'
 
@@ -114,9 +115,9 @@ function appendRoundHistory(
   return nextHistory.slice(-MAX_ROUND_HISTORY)
 }
 
-// En az 10 tur ve son 10 tur ortalamasına göre bölüm tamamlanma durumunu hesaplar
+// En az MIN_ROUNDS_TO_COMPLETE tur ve ortalamasına göre bölüm tamamlanma durumunu hesaplar
 function calculateLevelComplete(roundHistory: number[]): boolean {
-  if (roundHistory.length < MAX_ROUND_HISTORY) {
+  if (roundHistory.length < MIN_ROUNDS_TO_COMPLETE) {
     return false
   }
 
@@ -219,7 +220,7 @@ export function useGame(): UseGameReturn {
     console.log('Ortalama:', average)
     console.log(
       'levelComplete oldu mu:',
-      nextHistory.length >= 10 && average >= 90,
+      nextHistory.length >= MIN_ROUNDS_TO_COMPLETE && average >= 90,
     )
 
     roundHistoryRef.current = nextHistory

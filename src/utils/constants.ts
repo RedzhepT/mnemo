@@ -17,6 +17,9 @@ export interface ShowTimeRange extends LevelRange {
 
 export const MAX_LEVEL = 20
 
+export const DEBUG_MODE = true
+export const MIN_ROUNDS_TO_COMPLETE = DEBUG_MODE ? 4 : 10
+
 export const GRID_SIZES: GridSizeRange[] = [
   { minLevel: 1, maxLevel: 5, size: 6 },
   { minLevel: 6, maxLevel: 10, size: 6 },

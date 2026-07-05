@@ -1,0 +1,56 @@
+# Mnemo — Proje Kuralları
+
+## Tech Stack
+- React + TypeScript + Vite
+- Tailwind CSS (styling)
+- Supabase (veritabanı, auth, realtime)
+- Framer Motion (animasyonlar)
+- React Router (sayfa geçişleri)
+
+## Dosya Yapısı
+src/
+  components/
+    Grid.tsx        → oyun tahtası
+    Cell.tsx        → tek kare
+    HUD.tsx         → puan, süre, bölüm göstergesi
+    Leaderboard.tsx → skor tablosu
+    Chat.tsx        → kullanıcı mesajlaşma
+  hooks/
+    useGame.ts      → oyun state yönetimi
+    useTimer.ts     → süre sayacı
+    useAuth.ts      → kullanıcı oturumu
+  lib/
+    supabase.ts     → supabase client
+  utils/
+    scoring.ts      → puan hesaplama
+    levels.ts       → bölüm konfigürasyonları
+  pages/
+    Game.tsx        → oyun sayfası
+    Home.tsx        → ana sayfa
+    Profile.tsx     → kullanıcı profili
+
+## Kodlama Kuralları
+- Türkçe yorum satırları kullan
+- Her fonksiyonun üstüne ne yaptığını bir satırda açıkla
+- TypeScript strict mode — any kullanma
+- Her component için prop tipi ayrı interface olarak tanımla
+- Magic number kullanma, sabitler src/utils/constants.ts dosyasına git
+
+## Oyun Mantığı
+- Oyun 3 fazdan oluşur: 'showing' | 'input' | 'result'
+- showing: kareler sırayla yanıp söner, oyuncu izler
+- input: oyuncu sırayı tıklar, süre işler
+- result: doğru/yanlış gösterilir, puan hesaplanır
+- Bölüm 1-5: 6x6 grid, 3 kare, 600ms gösterim
+- Bölüm 6-10: 6x6 grid, 4 kare, 500ms gösterim
+- Bölüm 11+: 7x7 grid, 4 kare, 400ms gösterim
+
+## Supabase Tabloları
+- users: id, username, email, created_at
+- scores: id, user_id, score, level, elapsed_ms, created_at
+- messages: id, sender_id, receiver_id, content, created_at
+
+## Stil Kuralları
+- Renk paleti: mor (#7F77DD) aktif/gösterim, sarı (#EF9F27) oyuncu seçimi, yeşil doğru, kırmızı yanlış
+- Mobil öncelikli tasarım — her şey telefonda da çalışmalı
+- Animasyon süresi: kare flash 600ms, geçiş animasyonları 300ms

@@ -1,0 +1,13 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-mnemo-bg: #0e0e14;
+  --color-mnemo-cell: #1a1a2e;
+  --color-mnemo-cell-hover: #222240;
+  --color-mnemo-border: #2a2a45;
+  --color-mnemo-primary: #534ab7;
+  --color-mnemo-primary-hover: #7f77dd;
+  --color-mnemo-hud: #6b6b8a;
+  --color-mnemo-yellow: #ef9f27;
+  --radius-mnemo-cell: 6px;
+}

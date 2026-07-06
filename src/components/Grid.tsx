@@ -51,12 +51,13 @@ export function Grid({
 
   return (
     <div
-      className={`grid w-full max-w-md gap-1 ${gridColsClass} mx-auto px-4 sm:max-w-lg`}
+      className={`grid w-full max-w-md gap-0.5 ${gridColsClass} mx-auto px-4 sm:max-w-lg`}
     >
       {Array.from({ length: cellCount }, (_, index) => (
         <Cell
           key={index}
           index={index}
+          gridSize={gridSize}
           isActive={phase === 'showing' && activeIndex === index}
           isPlayerSelected={phase === 'input' && playerInput.includes(index)}
           resultStatus={phase === 'result' ? (resultMap[index] ?? null) : null}

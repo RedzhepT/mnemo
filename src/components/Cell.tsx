@@ -2,6 +2,7 @@ import type { ResultStatus } from '../hooks/useGame'
 
 export interface CellProps {
   index: number
+  gridSize: number
   isActive: boolean
   isPlayerSelected: boolean
   resultStatus: ResultStatus | null
@@ -11,12 +12,14 @@ export interface CellProps {
 
 // Kare durumuna göre Tailwind sınıflarını döner
 function getCellClassName(
+  index: number,
+  gridSize: number,
   isActive: boolean,
   isPlayerSelected: boolean,
   resultStatus: ResultStatus | null,
 ): string {
   const base =
-    'relative flex aspect-square w-full items-center justify-center rounded-[6px] border border-mnemo-border text-lg font-semibold transition-all duration-300 cursor-pointer select-none'
+    'relative flex aspect-square w-full items-center justify-center rounded-[2px] border border-mnemo-border text-lg font-semibold transition-all duration-300 cursor-pointer select-none'
 
   if (resultStatus === 'correct') {
     return `${base} border-transparent bg-green-500 text-white shadow-md`
@@ -42,12 +45,21 @@ function getCellClassName(
     return `${base} border-transparent bg-mnemo-yellow text-white shadow-md`
   }
 
-  return `${base} bg-mnemo-cell hover:bg-mnemo-cell-hover active:scale-95`
+  const row = Math.floor(index / gridSize)
+  const col = index % gridSize
+  const isLight = (row + col) % 2 === 0
+
+  if (isLight) {
+    return `${base} bg-[#F0D9B5] hover:bg-[#F5E0C0] active:scale-95`
+  }
+
+  return `${base} bg-[#B58863] hover:bg-[#C49A75] active:scale-95`
 }
 
 // Oyun tahtasındaki tek bir kareyi render eder
 export function Cell({
   index,
+  gridSize,
   isActive,
   isPlayerSelected,
   resultStatus,
@@ -58,7 +70,13 @@ export function Cell({
     <button
       type="button"
       aria-label={`Kare ${index + 1}`}
-      className={getCellClassName(isActive, isPlayerSelected, resultStatus)}
+      className={getCellClassName(
+        index,
+        gridSize,
+        isActive,
+        isPlayerSelected,
+        resultStatus,
+      )}
       onClick={() => onClick(index)}
     >
       {sequenceOrder !== null && <span>{sequenceOrder}</span>}

@@ -1,4 +1,9 @@
-import type { ResultMap } from '../hooks/useGame'
+import type {
+  EmojiCell,
+  EmojiType,
+  InputPhase,
+  ResultMap,
+} from '../hooks/useGame'
 import { Cell } from './Cell'
 
 export interface GridProps {
@@ -8,6 +13,9 @@ export interface GridProps {
   phase: string
   activeIndex: number | null
   resultMap: ResultMap
+  emojiSequence: EmojiCell[]
+  isEmojiMode: boolean
+  currentInputCategory: InputPhase
   onCellClick: (index: number) => void
 }
 
@@ -35,6 +43,14 @@ function getSequenceOrder(
   return position + 1
 }
 
+// Kare index'i için emojiSequence'den emoji bilgisini döner
+function getCellEmoji(
+  index: number,
+  emojiSequence: EmojiCell[],
+): EmojiType | null {
+  return emojiSequence.find((cell) => cell.index === index)?.emoji ?? null
+}
+
 // gridSize x gridSize oyun tahtasını render eder
 export function Grid({
   gridSize,
@@ -43,11 +59,16 @@ export function Grid({
   phase,
   activeIndex,
   resultMap,
+  emojiSequence,
+  isEmojiMode,
+  currentInputCategory,
   onCellClick,
 }: GridProps) {
   const cellCount = gridSize * gridSize
   const gridColsClass =
     GRID_COLS_CLASS[gridSize] ?? `grid-cols-[repeat(${gridSize},minmax(0,1fr))]`
+
+  void currentInputCategory
 
   return (
     <div
@@ -62,6 +83,8 @@ export function Grid({
           isPlayerSelected={phase === 'input' && playerInput.includes(index)}
           resultStatus={phase === 'result' ? (resultMap[index] ?? null) : null}
           sequenceOrder={getSequenceOrder(index, sequence, phase)}
+          emoji={getCellEmoji(index, emojiSequence)}
+          isEmojiMode={isEmojiMode}
           onClick={onCellClick}
         />
       ))}

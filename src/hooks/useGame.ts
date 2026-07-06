@@ -7,6 +7,15 @@ export type GamePhase = 'idle' | 'showing' | 'input' | 'result'
 
 export type ResultStatus = 'correct' | 'wrong-order' | 'wrong' | 'missed'
 
+export type EmojiType = 'cat' | 'bear'
+
+export interface EmojiCell {
+  index: number
+  emoji: EmojiType
+}
+
+export type InputPhase = EmojiType | null
+
 export interface CellResult {
   index: number
   status: ResultStatus
@@ -38,6 +47,9 @@ export interface UseGameReturn {
   roundCount: number
   isPaused: boolean
   levelComplete: boolean
+  emojiSequence: EmojiCell[]
+  currentInputCategory: InputPhase
+  categoryOrder: EmojiType[]
   startGame: () => void
   handleCellClick: (index: number) => void
   nextLevel: () => void
@@ -57,6 +69,52 @@ function generateSequence(gridSize: number, length: number): number[] {
   }
 
   return pool.slice(0, length)
+}
+
+// Her kareye rastgele emoji atar; en az bir kedi ve bir ayı garantiler
+function generateEmojiSequence(cellIndices: number[]): EmojiCell[] {
+  const emojis: EmojiType[] = cellIndices.map(() =>
+    Math.random() < 0.5 ? 'cat' : 'bear',
+  )
+
+  if (!emojis.includes('cat')) {
+    emojis[Math.floor(Math.random() * emojis.length)] = 'cat'
+  }
+
+  if (!emojis.includes('bear')) {
+    const catOnlyIndex =
+      emojis.filter((emoji) => emoji === 'cat').length === 1
+        ? emojis.findIndex((emoji) => emoji === 'cat')
+        : -1
+
+    let bearIndex = Math.floor(Math.random() * emojis.length)
+
+    while (bearIndex === catOnlyIndex) {
+      bearIndex = Math.floor(Math.random() * emojis.length)
+    }
+
+    emojis[bearIndex] = 'bear'
+  }
+
+  return cellIndices.map((index, position) => ({
+    index,
+    emoji: emojis[position],
+  }))
+}
+
+// O turda kategorilerin hangi sırayla sorulacağını rastgele belirler
+function generateCategoryOrder(): EmojiType[] {
+  return Math.random() < 0.5 ? ['cat', 'bear'] : ['bear', 'cat']
+}
+
+// Belirli kategorideki kareleri gösterim sırasına göre döner
+function getCategoryCellIndices(
+  emojiSequence: EmojiCell[],
+  category: EmojiType,
+): number[] {
+  return emojiSequence
+    .filter((cell) => cell.emoji === category)
+    .map((cell) => cell.index)
 }
 
 // Oyuncu girişi ile hedef sırayı karşılaştırarak doğru tıklama sayısını döner
@@ -155,11 +213,19 @@ export function useGame(): UseGameReturn {
   const [roundCount, setRoundCount] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const [levelComplete, setLevelComplete] = useState(false)
+  const [emojiSequence, setEmojiSequence] = useState<EmojiCell[]>([])
+  const [currentInputCategory, setCurrentInputCategory] = useState<InputPhase>(null)
+  const [categoryOrder, setCategoryOrder] = useState<EmojiType[]>([])
 
   const showTimeoutsRef = useRef<number[]>([])
   const inputTimerRef = useRef<number | null>(null)
   const inputStartedAtRef = useRef(0)
   const sequenceRef = useRef<number[]>([])
+  const emojiSequenceRef = useRef<EmojiCell[]>([])
+  const categoryOrderRef = useRef<EmojiType[]>([])
+  const currentInputCategoryRef = useRef<InputPhase>(null)
+  const categoryProgressRef = useRef(0)
+  const roundModeRef = useRef<'normal' | 'emoji'>('normal')
   const elapsedMsRef = useRef(0)
   const roundHistoryRef = useRef<number[]>([])
   const phaseRef = useRef<GamePhase>('idle')
@@ -170,6 +236,9 @@ export function useGame(): UseGameReturn {
   phaseRef.current = phase
   roundHistoryRef.current = roundHistory
   levelCompleteRef.current = levelComplete
+  emojiSequenceRef.current = emojiSequence
+  categoryOrderRef.current = categoryOrder
+  currentInputCategoryRef.current = currentInputCategory
 
   // Zamanlayıcıları temizler
   const clearShowTimeouts = useCallback(() => {
@@ -230,6 +299,32 @@ export function useGame(): UseGameReturn {
     setScore(roundScore)
   }, [])
 
+  // Turu tamamlar ve result fazına geçer
+  const completeRound = useCallback(
+    (finalPlayerInput: number[]) => {
+      stopInputTimer()
+
+      const targetSequence =
+        roundModeRef.current === 'emoji'
+          ? emojiSequenceRef.current.map((cell) => cell.index)
+          : sequenceRef.current
+
+      const correctCount = countCorrectInputs(finalPlayerInput, targetSequence)
+      const roundScore = calculateScore(
+        correctCount,
+        targetSequence.length,
+        elapsedMsRef.current,
+      )
+
+      setResultMap(buildResultMap(targetSequence, finalPlayerInput))
+      recordRoundResult(roundScore)
+      setPhase('result')
+      setCurrentInputCategory(null)
+      currentInputCategoryRef.current = null
+    },
+    [recordRoundResult, stopInputTimer],
+  )
+
   // Belirtilen bölüm için gösterim fazını başlatır ve input fazına geçer
   const beginRound = useCallback(
     (roundLevel: number) => {
@@ -242,6 +337,7 @@ export function useGame(): UseGameReturn {
         config.sequenceLength,
       )
 
+      roundModeRef.current = config.mode
       sequenceRef.current = nextSequence
       setSequence(nextSequence)
       setPlayerInput([])
@@ -249,6 +345,27 @@ export function useGame(): UseGameReturn {
       setActiveIndex(null)
       setElapsedMs(0)
       elapsedMsRef.current = 0
+      categoryProgressRef.current = 0
+
+      if (config.mode === 'emoji') {
+        const nextEmojiSequence = generateEmojiSequence(nextSequence)
+        const nextCategoryOrder = generateCategoryOrder()
+
+        emojiSequenceRef.current = nextEmojiSequence
+        categoryOrderRef.current = nextCategoryOrder
+        setEmojiSequence(nextEmojiSequence)
+        setCategoryOrder(nextCategoryOrder)
+        setCurrentInputCategory(null)
+        currentInputCategoryRef.current = null
+      } else {
+        emojiSequenceRef.current = []
+        categoryOrderRef.current = []
+        setEmojiSequence([])
+        setCategoryOrder([])
+        setCurrentInputCategory(null)
+        currentInputCategoryRef.current = null
+      }
+
       setPhase('showing')
 
       nextSequence.forEach((cellIndex, index) => {
@@ -261,6 +378,14 @@ export function useGame(): UseGameReturn {
       const finishTimeout = window.setTimeout(() => {
         setActiveIndex(null)
         setPhase('input')
+
+        if (config.mode === 'emoji') {
+          const firstCategory = categoryOrderRef.current[0]
+          currentInputCategoryRef.current = firstCategory
+          setCurrentInputCategory(firstCategory)
+          categoryProgressRef.current = 0
+        }
+
         startInputTimer()
       }, nextSequence.length * config.showTimeMs)
 
@@ -276,10 +401,67 @@ export function useGame(): UseGameReturn {
 
   startGameRef.current = startGame
 
+  // Emoji modunda kategori bazlı tıklamayı işler
+  const handleEmojiCellClick = useCallback(
+    (index: number, previousInput: number[]) => {
+      const category = currentInputCategoryRef.current
+
+      if (!category) {
+        return previousInput
+      }
+
+      const cell = emojiSequenceRef.current.find((item) => item.index === index)
+
+      if (!cell || cell.emoji !== category) {
+        return previousInput
+      }
+
+      const expectedCells = getCategoryCellIndices(
+        emojiSequenceRef.current,
+        category,
+      )
+      const expectedIndex = expectedCells[categoryProgressRef.current]
+
+      if (index !== expectedIndex) {
+        return previousInput
+      }
+
+      const nextPlayerInput = [...previousInput, index]
+      categoryProgressRef.current += 1
+
+      if (categoryProgressRef.current < expectedCells.length) {
+        return nextPlayerInput
+      }
+
+      const currentCategoryIndex = categoryOrderRef.current.indexOf(category)
+
+      if (currentCategoryIndex < categoryOrderRef.current.length - 1) {
+        const nextCategory = categoryOrderRef.current[currentCategoryIndex + 1]
+
+        categoryProgressRef.current = 0
+        currentInputCategoryRef.current = nextCategory
+        setCurrentInputCategory(nextCategory)
+
+        return nextPlayerInput
+      }
+
+      completeRound(nextPlayerInput)
+      return nextPlayerInput
+    },
+    [completeRound],
+  )
+
   // Oyuncu kare tıklamasını işler
   const handleCellClick = useCallback(
     (index: number) => {
       if (phase !== 'input') {
+        return
+      }
+
+      if (roundModeRef.current === 'emoji') {
+        setPlayerInput((previousInput) =>
+          handleEmojiCellClick(index, previousInput),
+        )
         return
       }
 
@@ -290,28 +472,11 @@ export function useGame(): UseGameReturn {
           return nextPlayerInput
         }
 
-        stopInputTimer()
-
-        const correctCount = countCorrectInputs(
-          nextPlayerInput,
-          sequenceRef.current,
-        )
-        const roundScore = calculateScore(
-          correctCount,
-          sequenceRef.current.length,
-          elapsedMsRef.current,
-        )
-
-        setResultMap(
-          buildResultMap(sequenceRef.current, nextPlayerInput),
-        )
-        recordRoundResult(roundScore)
-        setPhase('result')
-
+        completeRound(nextPlayerInput)
         return nextPlayerInput
       })
     },
-    [phase, recordRoundResult, stopInputTimer],
+    [completeRound, handleEmojiCellClick, phase],
   )
 
   // Bir sonraki bölüme geçer ve yeni tur başlatır
@@ -331,6 +496,11 @@ export function useGame(): UseGameReturn {
     clearShowTimeouts()
     stopInputTimer()
     sequenceRef.current = []
+    emojiSequenceRef.current = []
+    categoryOrderRef.current = []
+    currentInputCategoryRef.current = null
+    categoryProgressRef.current = 0
+    roundModeRef.current = 'normal'
     localStorage.removeItem(SAVE_KEY)
 
     setPhase('idle')
@@ -347,6 +517,9 @@ export function useGame(): UseGameReturn {
     setRoundCount(0)
     setIsPaused(false)
     setLevelComplete(false)
+    setEmojiSequence([])
+    setCategoryOrder([])
+    setCurrentInputCategory(null)
     roundRecordedRef.current = false
   }, [clearShowTimeouts, stopInputTimer])
 
@@ -434,6 +607,9 @@ export function useGame(): UseGameReturn {
     roundCount,
     isPaused,
     levelComplete,
+    emojiSequence,
+    currentInputCategory,
+    categoryOrder,
     startGame,
     handleCellClick,
     nextLevel,

@@ -1,4 +1,4 @@
-import type { ResultStatus } from '../hooks/useGame'
+import type { EmojiType, ResultStatus } from '../hooks/useGame'
 
 export interface CellProps {
   index: number
@@ -7,7 +7,14 @@ export interface CellProps {
   isPlayerSelected: boolean
   resultStatus: ResultStatus | null
   sequenceOrder: number | null
+  emoji: EmojiType | null
+  isEmojiMode: boolean
   onClick: (index: number) => void
+}
+
+const EMOJI_DISPLAY: Record<EmojiType, string> = {
+  cat: '🐱',
+  bear: '🐻',
 }
 
 // Kare durumuna göre Tailwind sınıflarını döner
@@ -64,6 +71,8 @@ export function Cell({
   isPlayerSelected,
   resultStatus,
   sequenceOrder,
+  emoji,
+  isEmojiMode,
   onClick,
 }: CellProps) {
   return (
@@ -79,7 +88,11 @@ export function Cell({
       )}
       onClick={() => onClick(index)}
     >
-      {sequenceOrder !== null && <span>{sequenceOrder}</span>}
+      {isEmojiMode && emoji !== null ? (
+        <span className="text-[2rem] leading-none">{EMOJI_DISPLAY[emoji]}</span>
+      ) : (
+        sequenceOrder !== null && <span>{sequenceOrder}</span>
+      )}
     </button>
   )
 }

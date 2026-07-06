@@ -1,11 +1,16 @@
 import { Grid } from './components/Grid'
-import { useGame } from './hooks/useGame'
+import { useGame, type EmojiType } from './hooks/useGame'
 import { getLevelConfig } from './utils/levels'
 
 const buttonClassName =
   'rounded-[6px] bg-mnemo-primary px-8 py-3 font-medium text-white transition-colors hover:bg-mnemo-primary-hover active:scale-95'
 
 const SAVE_KEY = 'mnemo_save'
+
+const CATEGORY_EMOJI: Record<EmojiType, string> = {
+  cat: '🐱',
+  bear: '🐻',
+}
 
 // Kayıtlı ilerlemeyi siler ve sayfayı yeniler
 function handleResetLevel(): void {
@@ -37,6 +42,8 @@ function App() {
     roundCount,
     isPaused,
     levelComplete,
+    emojiSequence,
+    currentInputCategory,
     handleCellClick,
     startGame,
     nextLevel,
@@ -44,7 +51,8 @@ function App() {
     resumeGame,
   } = useGame()
 
-  const { gridSize } = getLevelConfig(level)
+  const { gridSize, mode } = getLevelConfig(level)
+  const isEmojiMode = mode === 'emoji'
   const roundAverage = calculateRoundAverage(roundHistory)
   const formattedAverage = roundAverage.toFixed(1)
   const showStartButton = phase === 'idle' && !isPaused
@@ -85,6 +93,12 @@ function App() {
         </section>
       ) : (
         <>
+          {isEmojiMode && phase === 'input' && currentInputCategory !== null && (
+            <p className="text-2xl font-semibold text-white">
+              Şimdi tıkla: {CATEGORY_EMOJI[currentInputCategory]}
+            </p>
+          )}
+
           <main className="w-full">
             <Grid
               gridSize={gridSize}
@@ -93,6 +107,9 @@ function App() {
               phase={phase}
               activeIndex={activeIndex}
               resultMap={resultMap}
+              emojiSequence={emojiSequence}
+              isEmojiMode={isEmojiMode}
+              currentInputCategory={currentInputCategory}
               onCellClick={handleCellClick}
             />
           </main>

@@ -39,6 +39,7 @@ export interface UseGameReturn {
   level: number;
   sequence: number[];
   playerInput: number[];
+  allPlayerInputs: number[];
   score: number;
   elapsedMs: number;
   activeIndex: number | null;
@@ -284,6 +285,14 @@ export function useGame(): UseGameReturn {
     }, 50);
   }, [stopInputTimer]);
 
+  // Oyuncu tıklama dizilerini sıfırlar
+  const resetPlayerInputs = useCallback(() => {
+    setPlayerInput([]);
+    setAllPlayerInputs([]);
+    allPlayerInputsRef.current = [];
+    playerInputRef.current = [];
+  }, []);
+
   // Tur sonucunu geçmişe kaydeder ve bölüm tamamlanma durumunu günceller
   const recordRoundResult = useCallback((roundScore: number) => {
     if (roundRecordedRef.current) {
@@ -351,8 +360,9 @@ export function useGame(): UseGameReturn {
       setPhase("result");
       setCurrentInputCategory(null);
       currentInputCategoryRef.current = null;
+      resetPlayerInputs();
     },
-    [recordRoundResult, stopInputTimer],
+    [recordRoundResult, resetPlayerInputs, stopInputTimer],
   );
 
   // Belirtilen bölüm için gösterim fazını başlatır ve input fazına geçer
@@ -370,10 +380,8 @@ export function useGame(): UseGameReturn {
       roundModeRef.current = config.mode;
       sequenceRef.current = nextSequence;
       setSequence(nextSequence);
-      setPlayerInput([]);
-      setAllPlayerInputs([]);
-      allPlayerInputsRef.current = [];
-      playerInputRef.current = [];
+      resetPlayerInputs();
+      console.log("allPlayerInputs sıfırlandı");
       setResultMap({});
       setActiveIndex(null);
       setElapsedMs(0);
@@ -431,7 +439,7 @@ export function useGame(): UseGameReturn {
 
       showTimeoutsRef.current.push(finishTimeout);
     },
-    [clearShowTimeouts, startInputTimer, stopInputTimer],
+    [clearShowTimeouts, resetPlayerInputs, startInputTimer, stopInputTimer],
   );
 
   // Oyunu mevcut bölümle başlatır
@@ -595,10 +603,7 @@ export function useGame(): UseGameReturn {
     setPhase("idle");
     setLevel(1);
     setSequence([]);
-    setPlayerInput([]);
-    setAllPlayerInputs([]);
-    allPlayerInputsRef.current = [];
-    playerInputRef.current = [];
+    resetPlayerInputs();
     setScore(0);
     setElapsedMs(0);
     elapsedMsRef.current = 0;
@@ -613,7 +618,7 @@ export function useGame(): UseGameReturn {
     setCategoryOrder([]);
     setCurrentInputCategory(null);
     roundRecordedRef.current = false;
-  }, [clearShowTimeouts, stopInputTimer]);
+  }, [clearShowTimeouts, resetPlayerInputs, stopInputTimer]);
 
   // Debug: belirtilen bölüme atlar ve tur geçmişini sıfırlar
   const jumpToLevel = useCallback(
@@ -631,10 +636,7 @@ export function useGame(): UseGameReturn {
       setPhase("idle");
       setSequence([]);
       sequenceRef.current = [];
-      setPlayerInput([]);
-      setAllPlayerInputs([]);
-      allPlayerInputsRef.current = [];
-      playerInputRef.current = [];
+      resetPlayerInputs();
       setResultMap({});
       setActiveIndex(null);
       setEmojiSequence([]);
@@ -646,7 +648,7 @@ export function useGame(): UseGameReturn {
       categoryProgressRef.current = 0;
       roundRecordedRef.current = false;
     },
-    [clearShowTimeouts, stopInputTimer],
+    [clearShowTimeouts, resetPlayerInputs, stopInputTimer],
   );
 
   // Mevcut ilerlemeyi localStorage'a kaydeder
@@ -739,6 +741,7 @@ export function useGame(): UseGameReturn {
     level,
     sequence,
     playerInput,
+    allPlayerInputs,
     score,
     elapsedMs,
     activeIndex,

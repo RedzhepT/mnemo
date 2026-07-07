@@ -80,6 +80,8 @@ export function Grid({
           key={index}
           index={index}
           gridSize={gridSize}
+          phase={phase}
+          activeIndex={activeIndex}
           isActive={phase === "showing" && activeIndex === index}
           isPlayerSelected={phase === "input" && playerInput.includes(index)}
           resultStatus={phase === "result" ? (resultMap[index] ?? null) : null}

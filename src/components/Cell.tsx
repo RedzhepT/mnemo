@@ -3,6 +3,8 @@ import type { EmojiType, ResultStatus } from "../hooks/useGame";
 export interface CellProps {
   index: number;
   gridSize: number;
+  phase: string;
+  activeIndex: number | null;
   isActive: boolean;
   isPlayerSelected: boolean;
   resultStatus: ResultStatus | null;
@@ -67,6 +69,8 @@ function getCellClassName(
 export function Cell({
   index,
   gridSize,
+  phase,
+  activeIndex,
   isActive,
   isPlayerSelected,
   resultStatus,
@@ -88,7 +92,10 @@ export function Cell({
       )}
       onClick={() => onClick(index)}
     >
-      {isEmojiMode && emoji !== null ? (
+      {isEmojiMode &&
+      phase === "showing" &&
+      index === activeIndex &&
+      emoji !== null ? (
         <span className="text-[2rem] leading-none">{EMOJI_DISPLAY[emoji]}</span>
       ) : (
         sequenceOrder !== null && <span>{sequenceOrder}</span>

@@ -40,6 +40,8 @@ export interface UseGameReturn {
   sequence: number[];
   playerInput: number[];
   allPlayerInputs: number[];
+  correctPlayerInputs: number[];
+  wrongInputIndices: number[];
   score: number;
   elapsedMs: number;
   activeIndex: number | null;
@@ -215,6 +217,8 @@ export function useGame(): UseGameReturn {
   const [sequence, setSequence] = useState<number[]>([]);
   const [playerInput, setPlayerInput] = useState<number[]>([]);
   const [allPlayerInputs, setAllPlayerInputs] = useState<number[]>([]);
+  const [correctPlayerInputs, setCorrectPlayerInputs] = useState<number[]>([]);
+  const [wrongInputIndices, setWrongInputIndices] = useState<number[]>([]);
   const [score, setScore] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -238,6 +242,8 @@ export function useGame(): UseGameReturn {
   const categoryProgressRef = useRef(0);
   const allPlayerInputsRef = useRef<number[]>([]);
   const playerInputRef = useRef<number[]>([]);
+  const correctPlayerInputsRef = useRef<number[]>([]);
+  const wrongInputIndicesRef = useRef<number[]>([]);
   const roundModeRef = useRef<"normal" | "emoji">("normal");
   const elapsedMsRef = useRef(0);
   const roundHistoryRef = useRef<number[]>([]);
@@ -254,6 +260,8 @@ export function useGame(): UseGameReturn {
   currentInputCategoryRef.current = currentInputCategory;
   playerInputRef.current = playerInput;
   allPlayerInputsRef.current = allPlayerInputs;
+  correctPlayerInputsRef.current = correctPlayerInputs;
+  wrongInputIndicesRef.current = wrongInputIndices;
 
   // Zamanlayıcıları temizler
   const clearShowTimeouts = useCallback(() => {
@@ -289,8 +297,12 @@ export function useGame(): UseGameReturn {
   const resetPlayerInputs = useCallback(() => {
     setPlayerInput([]);
     setAllPlayerInputs([]);
+    setCorrectPlayerInputs([]);
+    setWrongInputIndices([]);
     allPlayerInputsRef.current = [];
     playerInputRef.current = [];
+    correctPlayerInputsRef.current = [];
+    wrongInputIndicesRef.current = [];
   }, []);
 
   // Tur sonucunu geçmişe kaydeder ve bölüm tamamlanma durumunu günceller
@@ -449,7 +461,7 @@ export function useGame(): UseGameReturn {
 
   startGameRef.current = startGame;
 
-  // Emoji modunda kategori bazlı tıklamayı işler
+  // Emoji modunda kategori bazlı tıklamayı işler — her tıklamada adım ilerler
   const handleEmojiCellClick = useCallback(
     (
       index: number,
@@ -457,6 +469,8 @@ export function useGame(): UseGameReturn {
     ): {
       playerInput: number[];
       allPlayerInputs: number[];
+      correctPlayerInputs: number[];
+      wrongInputIndices: number[];
       shouldComplete: boolean;
     } | null => {
       const category = currentInputCategoryRef.current;
@@ -465,31 +479,35 @@ export function useGame(): UseGameReturn {
         return null;
       }
 
+      const nextAllPlayerInputs = [...allPlayerInputsRef.current, index];
       const cell = emojiSequenceRef.current.find(
         (item) => item.index === index,
       );
-
-      if (!cell || cell.emoji !== category) {
-        return null;
-      }
-
       const expectedCells = getCategoryCellIndices(
         emojiSequenceRef.current,
         category,
       );
       const expectedIndex = expectedCells[categoryProgressRef.current];
+      const isCorrectClick = cell?.emoji === category && index === expectedIndex;
 
-      if (index !== expectedIndex) {
-        return null;
-      }
+      const nextCorrectPlayerInputs = isCorrectClick
+        ? [...correctPlayerInputsRef.current, index]
+        : correctPlayerInputsRef.current;
 
-      const nextAllPlayerInputs = [...allPlayerInputsRef.current, index];
+      const nextWrongInputIndices =
+        !isCorrectClick && !wrongInputIndicesRef.current.includes(index)
+          ? [...wrongInputIndicesRef.current, index]
+          : wrongInputIndicesRef.current;
+
       categoryProgressRef.current += 1;
+      const nextPlayerInput = [...previousCategoryInput, index];
 
       if (categoryProgressRef.current < expectedCells.length) {
         return {
-          playerInput: [...previousCategoryInput, index],
+          playerInput: nextPlayerInput,
           allPlayerInputs: nextAllPlayerInputs,
+          correctPlayerInputs: nextCorrectPlayerInputs,
+          wrongInputIndices: nextWrongInputIndices,
           shouldComplete: false,
         };
       }
@@ -506,13 +524,17 @@ export function useGame(): UseGameReturn {
         return {
           playerInput: [],
           allPlayerInputs: nextAllPlayerInputs,
+          correctPlayerInputs: nextCorrectPlayerInputs,
+          wrongInputIndices: nextWrongInputIndices,
           shouldComplete: false,
         };
       }
 
       return {
-        playerInput: [...previousCategoryInput, index],
+        playerInput: nextPlayerInput,
         allPlayerInputs: nextAllPlayerInputs,
+        correctPlayerInputs: nextCorrectPlayerInputs,
+        wrongInputIndices: nextWrongInputIndices,
         shouldComplete: true,
       };
     },
@@ -552,8 +574,12 @@ export function useGame(): UseGameReturn {
 
         playerInputRef.current = result.playerInput;
         allPlayerInputsRef.current = result.allPlayerInputs;
+        correctPlayerInputsRef.current = result.correctPlayerInputs;
+        wrongInputIndicesRef.current = result.wrongInputIndices;
         setPlayerInput(result.playerInput);
         setAllPlayerInputs(result.allPlayerInputs);
+        setCorrectPlayerInputs(result.correctPlayerInputs);
+        setWrongInputIndices(result.wrongInputIndices);
 
         if (result.shouldComplete) {
           completeRound(result.allPlayerInputs);
@@ -742,6 +768,8 @@ export function useGame(): UseGameReturn {
     sequence,
     playerInput,
     allPlayerInputs,
+    correctPlayerInputs,
+    wrongInputIndices,
     score,
     elapsedMs,
     activeIndex,

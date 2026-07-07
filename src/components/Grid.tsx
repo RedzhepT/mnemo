@@ -10,7 +10,8 @@ export interface GridProps {
   gridSize: number;
   sequence: number[];
   playerInput: number[];
-  allPlayerInputs: number[];
+  correctPlayerInputs: number[];
+  wrongInputIndices: number[];
   phase: string;
   activeIndex: number | null;
   resultMap: ResultMap;
@@ -57,7 +58,8 @@ export function Grid({
   gridSize,
   sequence,
   playerInput,
-  allPlayerInputs,
+  correctPlayerInputs,
+  wrongInputIndices,
   phase,
   activeIndex,
   resultMap,
@@ -88,10 +90,18 @@ export function Grid({
           isPlayerSelected={
             phase === "input" &&
             (isEmojiMode
-              ? allPlayerInputs.includes(index)
+              ? correctPlayerInputs.includes(index)
               : playerInput.includes(index))
           }
-          resultStatus={phase === "result" ? (resultMap[index] ?? null) : null}
+          resultStatus={
+            phase === "result"
+              ? (resultMap[index] ?? null)
+              : phase === "input" &&
+                  isEmojiMode &&
+                  wrongInputIndices.includes(index)
+                ? "wrong"
+                : null
+          }
           sequenceOrder={getSequenceOrder(index, sequence, phase)}
           emoji={getCellEmoji(index, emojiSequence)}
           isEmojiMode={isEmojiMode}

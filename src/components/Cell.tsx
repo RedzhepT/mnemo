@@ -23,6 +23,7 @@ const EMOJI_DISPLAY: Record<EmojiType, string> = {
 function getCellClassName(
   index: number,
   gridSize: number,
+  phase: string,
   isActive: boolean,
   isPlayerSelected: boolean,
   resultStatus: ResultStatus | null,
@@ -30,20 +31,23 @@ function getCellClassName(
   const base =
     "relative flex aspect-square w-full items-center justify-center rounded-[2px] border border-mnemo-border text-lg font-semibold transition-all duration-300 cursor-pointer select-none";
 
-  if (resultStatus === "correct") {
-    return `${base} border-transparent bg-green-500 text-white shadow-md`;
-  }
+  // Result renkleri yalnızca result fazında uygulanır
+  if (phase === "result") {
+    if (resultStatus === "correct") {
+      return `${base} border-transparent bg-green-500 text-white shadow-md`;
+    }
 
-  if (resultStatus === "wrong-order") {
-    return `${base} border-transparent bg-[#F97316] text-white shadow-md`;
-  }
+    if (resultStatus === "wrong-order") {
+      return `${base} border-transparent bg-[#F97316] text-white shadow-md`;
+    }
 
-  if (resultStatus === "wrong") {
-    return `${base} border-transparent bg-red-500 text-white shadow-md`;
-  }
+    if (resultStatus === "wrong") {
+      return `${base} border-transparent bg-red-500 text-white shadow-md`;
+    }
 
-  if (resultStatus === "missed") {
-    return `${base} border-transparent bg-blue-500 text-white shadow-md`;
+    if (resultStatus === "missed") {
+      return `${base} border-transparent bg-blue-500 text-white shadow-md`;
+    }
   }
 
   if (isActive) {
@@ -86,6 +90,7 @@ export function Cell({
       className={getCellClassName(
         index,
         gridSize,
+        phase,
         isActive,
         isPlayerSelected,
         resultStatus,

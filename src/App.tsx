@@ -35,8 +35,7 @@ function App() {
     phase,
     sequence,
     playerInput,
-    correctPlayerInputs,
-    wrongInputIndices,
+    allPlayerInputs,
     activeIndex,
     score,
     level,
@@ -121,8 +120,7 @@ function App() {
                 gridSize={gridSize}
                 sequence={sequence}
                 playerInput={playerInput}
-                correctPlayerInputs={correctPlayerInputs}
-                wrongInputIndices={wrongInputIndices}
+                allPlayerInputs={allPlayerInputs}
                 phase={phase}
                 activeIndex={activeIndex}
                 resultMap={resultMap}

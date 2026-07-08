@@ -1,8 +1,12 @@
+import { useState } from "react";
 import { Grid } from "./components/Grid";
 import { LevelSelect } from "./components/LevelSelect";
 import { useGame, type EmojiType } from "./hooks/useGame";
 import { DEBUG_MODE, MAX_LEVEL } from "./utils/constants";
 import { getLevelConfig } from "./utils/levels";
+
+const debugButtonClassName =
+  "rounded-[8px] bg-[#2A2A45] px-2 py-1.5 text-xs text-[#6B6B8A] transition-colors hover:bg-[#3A3A60] active:scale-95";
 
 const buttonClassName =
   "rounded-[6px] bg-mnemo-primary px-8 py-3 font-medium text-white transition-colors hover:bg-mnemo-primary-hover active:scale-95";
@@ -32,6 +36,8 @@ function calculateRoundAverage(roundHistory: number[]): number {
 }
 
 function App() {
+  const [showLevelSelect, setShowLevelSelect] = useState(false);
+
   const {
     phase,
     sequence,
@@ -63,6 +69,11 @@ function App() {
   const showPauseButton =
     !isPaused &&
     (phase === "showing" || phase === "input" || phase === "result");
+
+  const handleDebugLevelSelect = (targetLevel: number): void => {
+    selectLevelAndStart(targetLevel);
+    setShowLevelSelect(false);
+  };
 
   return (
     <>
@@ -144,9 +155,29 @@ function App() {
         )}
       </div>
 
-      <div className="fixed bottom-4 right-4 flex flex-col items-end gap-2">
+      {DEBUG_MODE && showLevelSelect && (
+        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-8">
+          <div className="w-full max-w-2xl">
+            <LevelSelect
+              currentLevel={level}
+              onSelectLevel={handleDebugLevelSelect}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2">
         {DEBUG_MODE && (
-          <label className="flex items-center gap-2 rounded-[8px] bg-[#2A2A45] px-2 py-1.5 text-xs text-[#6B6B8A]">
+          <>
+            <button
+              type="button"
+              className={debugButtonClassName}
+              onClick={() => setShowLevelSelect((previous) => !previous)}
+            >
+              {showLevelSelect ? "Gizle" : "Bölümleri Gör"}
+            </button>
+
+            <label className="flex items-center gap-2 rounded-[8px] bg-[#2A2A45] px-2 py-1.5 text-xs text-[#6B6B8A]">
             Bölüm:
             <input
               type="number"
@@ -156,7 +187,8 @@ function App() {
               onChange={(event) => jumpToLevel(Number(event.target.value))}
               className="w-12 rounded bg-[#1A1A2E] px-1 py-0.5 text-center text-[#6B6B8A] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
-          </label>
+            </label>
+          </>
         )}
 
         <button

@@ -1,4 +1,5 @@
 import { Grid } from "./components/Grid";
+import { LevelSelect } from "./components/LevelSelect";
 import { useGame, type EmojiType } from "./hooks/useGame";
 import { DEBUG_MODE, MAX_LEVEL } from "./utils/constants";
 import { getLevelConfig } from "./utils/levels";
@@ -48,10 +49,10 @@ function App() {
     currentInputCategory,
     handleCellClick,
     startGame,
-    nextLevel,
     pauseGame,
     resumeGame,
     jumpToLevel,
+    selectLevelAndStart,
   } = useGame();
 
   const { gridSize, mode } = getLevelConfig(level);
@@ -90,21 +91,10 @@ function App() {
             </button>
           </section>
         ) : levelComplete === true ? (
-          <section className="flex w-full max-w-md flex-col items-center gap-6 rounded-[6px] border border-mnemo-border bg-mnemo-cell px-6 py-10 text-center">
-            <h2 className="text-2xl font-semibold text-mnemo-primary-hover">
-              Bölüm Tamamlandı!
-            </h2>
-            <p className="text-mnemo-hud">
-              Son 10 tur ortalaması: %{formattedAverage}
-            </p>
-            <button
-              type="button"
-              className={buttonClassName}
-              onClick={nextLevel}
-            >
-              Sonraki Bölüm
-            </button>
-          </section>
+          <LevelSelect
+            currentLevel={level}
+            onSelectLevel={selectLevelAndStart}
+          />
         ) : (
           <>
             {isEmojiMode &&

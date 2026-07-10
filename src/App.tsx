@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Grid } from "./components/Grid";
 import { LevelSelect } from "./components/LevelSelect";
 import { useGame, type EmojiType } from "./hooks/useGame";
@@ -37,6 +37,7 @@ function calculateRoundAverage(roundHistory: number[]): number {
 
 function App() {
   const [showLevelSelect, setShowLevelSelect] = useState(false);
+  const [levelSelectDismissed, setLevelSelectDismissed] = useState(false);
 
   const {
     phase,
@@ -75,6 +76,15 @@ function App() {
     setShowLevelSelect(false);
   };
 
+  useEffect(() => {
+    if (levelComplete) {
+      setLevelSelectDismissed(false);
+    }
+  }, [levelComplete]);
+
+  const showCompleteLevelSelect =
+    levelComplete === true && !levelSelectDismissed && !isPaused;
+
   return (
     <>
       <div className="flex min-h-svh flex-col items-center justify-center gap-8 bg-mnemo-bg px-4 py-8">
@@ -101,10 +111,11 @@ function App() {
               Devam Et
             </button>
           </section>
-        ) : levelComplete === true ? (
+        ) : showCompleteLevelSelect ? (
           <LevelSelect
             currentLevel={level}
             onSelectLevel={selectLevelAndStart}
+            onClose={() => setLevelSelectDismissed(true)}
           />
         ) : (
           <>
@@ -161,6 +172,7 @@ function App() {
             <LevelSelect
               currentLevel={level}
               onSelectLevel={handleDebugLevelSelect}
+              onClose={() => setShowLevelSelect(false)}
             />
           </div>
         </div>

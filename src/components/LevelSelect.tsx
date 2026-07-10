@@ -4,6 +4,7 @@ import { getLevelConfig } from "../utils/levels";
 export interface LevelSelectProps {
   currentLevel: number;
   onSelectLevel: (level: number) => void;
+  onClose: () => void;
 }
 
 const SHOW_SPEED_LABELS: Record<number, string> = {
@@ -26,9 +27,23 @@ function getModeLabel(mode: "normal" | "emoji"): string {
 const LEVELS = Array.from({ length: MAX_LEVEL }, (_, index) => index + 1);
 
 // Bölüm tamamlandığında sonraki bölüm seçim tablosunu render eder
-export function LevelSelect({ currentLevel, onSelectLevel }: LevelSelectProps) {
+export function LevelSelect({
+  currentLevel,
+  onSelectLevel,
+  onClose,
+}: LevelSelectProps) {
   return (
-    <section className="flex w-full max-w-2xl flex-col gap-5 rounded-[6px] border border-mnemo-border bg-mnemo-cell px-4 py-6 sm:px-6 sm:py-8">
+    <section className="relative flex w-full max-w-2xl flex-col gap-5 rounded-[6px] border border-mnemo-border bg-mnemo-cell px-4 py-6 sm:px-6 sm:py-8">
+      <button
+        type="button"
+        aria-label="Kapat"
+        title="Kapat"
+        className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-[6px] bg-[#2A2A45] text-sm text-[#6B6B8A] transition-colors hover:bg-[#3A3A60] hover:text-[#F0D9B5] active:scale-95"
+        onClick={onClose}
+      >
+        ×
+      </button>
+
       <h2 className="text-center text-xl font-semibold text-[#F0D9B5] sm:text-2xl">
         Sonraki Bölümü Seç
       </h2>

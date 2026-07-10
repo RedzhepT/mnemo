@@ -7,9 +7,10 @@ export interface LevelSelectProps {
 }
 
 const SHOW_SPEED_LABELS: Record<number, string> = {
-  600: "Yavaş",
-  500: "Orta",
-  400: "Hızlı",
+  700: "Yavaş",
+  600: "Orta",
+  500: "Hızlı",
+  400: "Çok Hızlı",
 };
 
 // Gösterim süresini okunabilir etikete çevirir

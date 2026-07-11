@@ -15,7 +15,7 @@ export interface ShowTimeRange extends LevelRange {
   ms: number
 }
 
-export const MAX_LEVEL = 20
+export const MAX_LEVEL = 32
 
 export const DEBUG_MODE = true
 export const MIN_ROUNDS_TO_COMPLETE = DEBUG_MODE ? 4 : 10

@@ -23,6 +23,7 @@ export interface GridProps {
 const GRID_COLS_CLASS: Record<number, string> = {
   6: "grid-cols-6",
   7: "grid-cols-7",
+  8: "grid-cols-8",
 };
 
 // Kare index'inin sequence içindeki 1 tabanlı sıra numarasını döner

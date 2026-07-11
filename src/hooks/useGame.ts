@@ -124,6 +124,7 @@ export interface UseGameReturn {
   pauseGame: () => void;
   resumeGame: () => void;
   jumpToLevel: (targetLevel: number) => void;
+  selectLevelAndStart: (targetLevel: number) => void;
 }
 
 // Grid üzerinde tekrarsız rastgele kare indeksleri üretir
@@ -810,6 +811,17 @@ export function useGame(): UseGameReturn {
     ],
   );
 
+  // Seçilen bölüme atlar, ilerlemeyi sıfırlar ve oyunu başlatır
+  const selectLevelAndStart = useCallback(
+    (targetLevel: number) => {
+      const clampedLevel = Math.min(Math.max(targetLevel, 1), MAX_LEVEL);
+
+      jumpToLevel(clampedLevel);
+      beginRound(clampedLevel);
+    },
+    [beginRound, jumpToLevel],
+  );
+
   // Mevcut ilerlemeyi localStorage'a kaydeder
   const pauseGame = useCallback(() => {
     const saveData: MnemoSave = {
@@ -922,5 +934,6 @@ export function useGame(): UseGameReturn {
     pauseGame,
     resumeGame,
     jumpToLevel,
+    selectLevelAndStart,
   };
 }

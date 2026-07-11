@@ -1,7 +1,12 @@
+import { useEffect, useState } from "react";
 import { Grid } from "./components/Grid";
+import { LevelSelect } from "./components/LevelSelect";
 import { useGame, EMOJI_MAP } from "./hooks/useGame";
 import { DEBUG_MODE, MAX_LEVEL } from "./utils/constants";
 import { getLevelConfig } from "./utils/levels";
+
+const debugButtonClassName =
+  "rounded-[8px] bg-[#2A2A45] px-2 py-1.5 text-xs text-[#6B6B8A] transition-colors hover:bg-[#3A3A60] active:scale-95";
 
 const buttonClassName =
   "rounded-[6px] bg-mnemo-primary px-8 py-3 font-medium text-white transition-colors hover:bg-mnemo-primary-hover active:scale-95";
@@ -26,6 +31,9 @@ function calculateRoundAverage(roundHistory: number[]): number {
 }
 
 function App() {
+  const [showLevelSelect, setShowLevelSelect] = useState(false);
+  const [levelSelectDismissed, setLevelSelectDismissed] = useState(false);
+
   const {
     phase,
     sequence,
@@ -41,12 +49,13 @@ function App() {
     levelComplete,
     emojiSequence,
     currentInputCategory,
+    activeCategoryEmojis,
     handleCellClick,
     startGame,
-    nextLevel,
     pauseGame,
     resumeGame,
     jumpToLevel,
+    selectLevelAndStart,
   } = useGame();
 
   const { gridSize, mode } = getLevelConfig(level);
@@ -57,6 +66,20 @@ function App() {
   const showPauseButton =
     !isPaused &&
     (phase === "showing" || phase === "input" || phase === "result");
+
+  const handleDebugLevelSelect = (targetLevel: number): void => {
+    selectLevelAndStart(targetLevel);
+    setShowLevelSelect(false);
+  };
+
+  useEffect(() => {
+    if (levelComplete) {
+      setLevelSelectDismissed(false);
+    }
+  }, [levelComplete]);
+
+  const showCompleteLevelSelect =
+    levelComplete === true && !levelSelectDismissed && !isPaused;
 
   return (
     <>
@@ -84,24 +107,21 @@ function App() {
               Devam Et
             </button>
           </section>
-        ) : levelComplete === true ? (
-          <section className="flex w-full max-w-md flex-col items-center gap-6 rounded-[6px] border border-mnemo-border bg-mnemo-cell px-6 py-10 text-center">
-            <h2 className="text-2xl font-semibold text-mnemo-primary-hover">
-              Bölüm Tamamlandı!
-            </h2>
-            <p className="text-mnemo-hud">
-              Son 10 tur ortalaması: %{formattedAverage}
-            </p>
-            <button
-              type="button"
-              className={buttonClassName}
-              onClick={nextLevel}
-            >
-              Sonraki Bölüm
-            </button>
-          </section>
+        ) : showCompleteLevelSelect ? (
+          <LevelSelect
+            currentLevel={level}
+            onSelectLevel={selectLevelAndStart}
+            onClose={() => setLevelSelectDismissed(true)}
+          />
         ) : (
           <>
+            {isEmojiMode && activeCategoryEmojis !== null && (
+              <p className="text-sm text-mnemo-hud">
+                Bölüm emojileri: {EMOJI_MAP[activeCategoryEmojis[0]]}{" "}
+                {EMOJI_MAP[activeCategoryEmojis[1]]}
+              </p>
+            )}
+
             {isEmojiMode &&
               phase === "input" &&
               currentInputCategory !== null && (
@@ -149,19 +169,41 @@ function App() {
         )}
       </div>
 
-      <div className="fixed bottom-4 right-4 flex flex-col items-end gap-2">
-        {DEBUG_MODE && (
-          <label className="flex items-center gap-2 rounded-[8px] bg-[#2A2A45] px-2 py-1.5 text-xs text-[#6B6B8A]">
-            Bölüm:
-            <input
-              type="number"
-              min={1}
-              max={MAX_LEVEL}
-              value={level}
-              onChange={(event) => jumpToLevel(Number(event.target.value))}
-              className="w-12 rounded bg-[#1A1A2E] px-1 py-0.5 text-center text-[#6B6B8A] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      {DEBUG_MODE && showLevelSelect && (
+        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-8">
+          <div className="w-full max-w-2xl">
+            <LevelSelect
+              currentLevel={level}
+              onSelectLevel={handleDebugLevelSelect}
+              onClose={() => setShowLevelSelect(false)}
             />
-          </label>
+          </div>
+        </div>
+      )}
+
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2">
+        {DEBUG_MODE && (
+          <>
+            <button
+              type="button"
+              className={debugButtonClassName}
+              onClick={() => setShowLevelSelect((previous) => !previous)}
+            >
+              {showLevelSelect ? "Gizle" : "Bölümleri Gör"}
+            </button>
+
+            <label className="flex items-center gap-2 rounded-[8px] bg-[#2A2A45] px-2 py-1.5 text-xs text-[#6B6B8A]">
+              Bölüm:
+              <input
+                type="number"
+                min={1}
+                max={MAX_LEVEL}
+                value={level}
+                onChange={(event) => jumpToLevel(Number(event.target.value))}
+                className="w-12 rounded bg-[#1A1A2E] px-1 py-0.5 text-center text-[#6B6B8A] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+            </label>
+          </>
         )}
 
         <button

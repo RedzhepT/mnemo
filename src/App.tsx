@@ -1,5 +1,5 @@
 import { Grid } from "./components/Grid";
-import { useGame, type EmojiType } from "./hooks/useGame";
+import { useGame, EMOJI_MAP } from "./hooks/useGame";
 import { DEBUG_MODE, MAX_LEVEL } from "./utils/constants";
 import { getLevelConfig } from "./utils/levels";
 
@@ -7,11 +7,6 @@ const buttonClassName =
   "rounded-[6px] bg-mnemo-primary px-8 py-3 font-medium text-white transition-colors hover:bg-mnemo-primary-hover active:scale-95";
 
 const SAVE_KEY = "mnemo_save";
-
-const CATEGORY_EMOJI: Record<EmojiType, string> = {
-  cat: "🐱",
-  bear: "🐻",
-};
 
 // Kayıtlı ilerlemeyi siler ve sayfayı yeniler
 function handleResetLevel(): void {
@@ -111,7 +106,7 @@ function App() {
               phase === "input" &&
               currentInputCategory !== null && (
                 <p className="text-2xl font-semibold text-white">
-                  Şimdi tıkla: {CATEGORY_EMOJI[currentInputCategory]}
+                  Şimdi tıkla: {EMOJI_MAP[currentInputCategory]}
                 </p>
               )}
 

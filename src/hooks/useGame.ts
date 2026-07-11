@@ -7,7 +7,70 @@ export type GamePhase = "idle" | "showing" | "input" | "result";
 
 export type ResultStatus = "correct" | "wrong-order" | "wrong" | "missed";
 
-export type EmojiType = "cat" | "bear";
+export type EmojiType =
+  | "cat"
+  | "bear"
+  | "flamingo"
+  | "panda"
+  | "swan"
+  | "gorilla"
+  | "lion"
+  | "eagle"
+  | "snowman"
+  | "fox"
+  | "tiger"
+  | "frog"
+  | "butterfly"
+  | "dolphin"
+  | "unicorn"
+  | "octopus"
+  | "elephant"
+  | "giraffe"
+  | "crab";
+
+export const EMOJI_MAP: Record<EmojiType, string> = {
+  cat: "🐱",
+  bear: "🐻",
+  flamingo: "🦩",
+  panda: "🐼",
+  swan: "🦢",
+  gorilla: "🦍",
+  lion: "🦁",
+  eagle: "🦅",
+  snowman: "⛄",
+  fox: "🦊",
+  tiger: "🐯",
+  frog: "🐸",
+  butterfly: "🦋",
+  dolphin: "🐬",
+  unicorn: "🦄",
+  octopus: "🐙",
+  elephant: "🐘",
+  giraffe: "🦒",
+  crab: "🦀",
+};
+
+const ALL_EMOJI_TYPES: EmojiType[] = [
+  "cat",
+  "bear",
+  "flamingo",
+  "panda",
+  "swan",
+  "gorilla",
+  "lion",
+  "eagle",
+  "snowman",
+  "fox",
+  "tiger",
+  "frog",
+  "butterfly",
+  "dolphin",
+  "unicorn",
+  "octopus",
+  "elephant",
+  "giraffe",
+  "crab",
+];
 
 export interface EmojiCell {
   index: number;
@@ -53,6 +116,7 @@ export interface UseGameReturn {
   emojiSequence: EmojiCell[];
   currentInputCategory: InputPhase;
   categoryOrder: EmojiType[];
+  activeCategoryEmojis: [EmojiType, EmojiType] | null;
   startGame: () => void;
   handleCellClick: (index: number) => void;
   nextLevel: () => void;
@@ -75,29 +139,48 @@ function generateSequence(gridSize: number, length: number): number[] {
   return pool.slice(0, length);
 }
 
-// Her kareye rastgele emoji atar; en az bir kedi ve bir ayı garantiler
-function generateEmojiSequence(cellIndices: number[]): EmojiCell[] {
-  const emojis: EmojiType[] = cellIndices.map(() =>
-    Math.random() < 0.5 ? "cat" : "bear",
-  );
+// 19 emoji arasından rastgele 2 farklı kategori seçer
+function pickActiveCategoryEmojis(): [EmojiType, EmojiType] {
+  const pool = [...ALL_EMOJI_TYPES];
 
-  if (!emojis.includes("cat")) {
-    emojis[Math.floor(Math.random() * emojis.length)] = "cat";
+  for (let i = pool.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
   }
 
-  if (!emojis.includes("bear")) {
-    const catOnlyIndex =
-      emojis.filter((emoji) => emoji === "cat").length === 1
-        ? emojis.findIndex((emoji) => emoji === "cat")
+  const first = pool[0];
+  const second = pool[1];
+
+  return Math.random() < 0.5 ? [first, second] : [second, first];
+}
+
+// Her kareye seçilen kategorilerden birini atar; her kategoriden en az bir kare garantiler
+function generateEmojiSequence(
+  cellIndices: number[],
+  categories: [EmojiType, EmojiType],
+): EmojiCell[] {
+  const [firstCategory, secondCategory] = categories;
+  const emojis: EmojiType[] = cellIndices.map(() =>
+    Math.random() < 0.5 ? firstCategory : secondCategory,
+  );
+
+  if (!emojis.includes(firstCategory)) {
+    emojis[Math.floor(Math.random() * emojis.length)] = firstCategory;
+  }
+
+  if (!emojis.includes(secondCategory)) {
+    const onlyFirstIndex =
+      emojis.filter((emoji) => emoji === firstCategory).length === 1
+        ? emojis.findIndex((emoji) => emoji === firstCategory)
         : -1;
 
-    let bearIndex = Math.floor(Math.random() * emojis.length);
+    let secondIndex = Math.floor(Math.random() * emojis.length);
 
-    while (bearIndex === catOnlyIndex) {
-      bearIndex = Math.floor(Math.random() * emojis.length);
+    while (secondIndex === onlyFirstIndex) {
+      secondIndex = Math.floor(Math.random() * emojis.length);
     }
 
-    emojis[bearIndex] = "bear";
+    emojis[secondIndex] = secondCategory;
   }
 
   return cellIndices.map((index, position) => ({
@@ -106,9 +189,13 @@ function generateEmojiSequence(cellIndices: number[]): EmojiCell[] {
   }));
 }
 
-// O turda kategorilerin hangi sırayla sorulacağını rastgele belirler
-function generateCategoryOrder(): EmojiType[] {
-  return Math.random() < 0.5 ? ["cat", "bear"] : ["bear", "cat"];
+// Bölümdeki 2 kategorinin input sırasını rastgele belirler
+function shuffleCategoryOrder(
+  categories: [EmojiType, EmojiType],
+): EmojiType[] {
+  return Math.random() < 0.5
+    ? [categories[0], categories[1]]
+    : [categories[1], categories[0]];
 }
 
 // Belirli kategorideki kareleri gösterim sırasına göre döner
@@ -231,6 +318,9 @@ export function useGame(): UseGameReturn {
   const [currentInputCategory, setCurrentInputCategory] =
     useState<InputPhase>(null);
   const [categoryOrder, setCategoryOrder] = useState<EmojiType[]>([]);
+  const [activeCategoryEmojis, setActiveCategoryEmojis] = useState<
+    [EmojiType, EmojiType] | null
+  >(null);
 
   const showTimeoutsRef = useRef<number[]>([]);
   const inputTimerRef = useRef<number | null>(null);
@@ -238,6 +328,8 @@ export function useGame(): UseGameReturn {
   const sequenceRef = useRef<number[]>([]);
   const emojiSequenceRef = useRef<EmojiCell[]>([]);
   const categoryOrderRef = useRef<EmojiType[]>([]);
+  const activeCategoryEmojisRef = useRef<[EmojiType, EmojiType] | null>(null);
+  const levelForEmojisRef = useRef<number | null>(null);
   const currentInputCategoryRef = useRef<InputPhase>(null);
   const categoryProgressRef = useRef(0);
   const allPlayerInputsRef = useRef<number[]>([]);
@@ -257,6 +349,7 @@ export function useGame(): UseGameReturn {
   levelCompleteRef.current = levelComplete;
   emojiSequenceRef.current = emojiSequence;
   categoryOrderRef.current = categoryOrder;
+  activeCategoryEmojisRef.current = activeCategoryEmojis;
   currentInputCategoryRef.current = currentInputCategory;
   playerInputRef.current = playerInput;
   allPlayerInputsRef.current = allPlayerInputs;
@@ -303,6 +396,23 @@ export function useGame(): UseGameReturn {
     playerInputRef.current = [];
     correctPlayerInputsRef.current = [];
     wrongInputIndicesRef.current = [];
+  }, []);
+
+  // Bölüm başında emoji modu için 2 kategori seçer
+  const assignActiveCategoryEmojisForLevel = useCallback((roundLevel: number) => {
+    const config = getLevelConfig(roundLevel);
+
+    if (config.mode !== "emoji") {
+      activeCategoryEmojisRef.current = null;
+      levelForEmojisRef.current = null;
+      setActiveCategoryEmojis(null);
+      return;
+    }
+
+    const picked = pickActiveCategoryEmojis();
+    activeCategoryEmojisRef.current = picked;
+    levelForEmojisRef.current = roundLevel;
+    setActiveCategoryEmojis(picked);
   }, []);
 
   // Tur sonucunu geçmişe kaydeder ve bölüm tamamlanma durumunu günceller
@@ -401,8 +511,13 @@ export function useGame(): UseGameReturn {
       categoryProgressRef.current = 0;
 
       if (config.mode === "emoji") {
-        const nextEmojiSequence = generateEmojiSequence(nextSequence);
-        const nextCategoryOrder = generateCategoryOrder();
+        const categories =
+          activeCategoryEmojisRef.current ?? pickActiveCategoryEmojis();
+        const nextCategoryOrder = shuffleCategoryOrder(categories);
+        const nextEmojiSequence = generateEmojiSequence(
+          nextSequence,
+          categories,
+        );
 
         emojiSequenceRef.current = nextEmojiSequence;
         categoryOrderRef.current = nextCategoryOrder;
@@ -412,6 +527,7 @@ export function useGame(): UseGameReturn {
         currentInputCategoryRef.current = null;
 
         console.log("=== YENİ TUR ===");
+        console.log("Bölüm emojileri:", categories);
         console.log(
           "Emoji sırası:",
           nextEmojiSequence.map((e) => `${e.index}:${e.emoji}`),
@@ -456,8 +572,12 @@ export function useGame(): UseGameReturn {
 
   // Oyunu mevcut bölümle başlatır
   const startGame = useCallback(() => {
+    if (levelForEmojisRef.current !== level) {
+      assignActiveCategoryEmojisForLevel(level);
+    }
+
     beginRound(level);
-  }, [beginRound, level]);
+  }, [assignActiveCategoryEmojisForLevel, beginRound, level]);
 
   startGameRef.current = startGame;
 
@@ -611,8 +731,9 @@ export function useGame(): UseGameReturn {
     setRoundCount(0);
     setLevelComplete(false);
     setLevel(newLevel);
+    assignActiveCategoryEmojisForLevel(newLevel);
     beginRound(newLevel);
-  }, [beginRound, level]);
+  }, [assignActiveCategoryEmojisForLevel, beginRound, level]);
 
   // Oyun state'ini başlangıç değerlerine sıfırlar
   const resetGame = useCallback(() => {
@@ -628,6 +749,7 @@ export function useGame(): UseGameReturn {
 
     setPhase("idle");
     setLevel(1);
+    assignActiveCategoryEmojisForLevel(1);
     setSequence([]);
     resetPlayerInputs();
     setScore(0);
@@ -644,7 +766,12 @@ export function useGame(): UseGameReturn {
     setCategoryOrder([]);
     setCurrentInputCategory(null);
     roundRecordedRef.current = false;
-  }, [clearShowTimeouts, resetPlayerInputs, stopInputTimer]);
+  }, [
+    assignActiveCategoryEmojisForLevel,
+    clearShowTimeouts,
+    resetPlayerInputs,
+    stopInputTimer,
+  ]);
 
   // Debug: belirtilen bölüme atlar ve tur geçmişini sıfırlar
   const jumpToLevel = useCallback(
@@ -659,6 +786,7 @@ export function useGame(): UseGameReturn {
       setRoundCount(0);
       setLevelComplete(false);
       setLevel(clampedLevel);
+      assignActiveCategoryEmojisForLevel(clampedLevel);
       setPhase("idle");
       setSequence([]);
       sequenceRef.current = [];
@@ -674,7 +802,12 @@ export function useGame(): UseGameReturn {
       categoryProgressRef.current = 0;
       roundRecordedRef.current = false;
     },
-    [clearShowTimeouts, resetPlayerInputs, stopInputTimer],
+    [
+      assignActiveCategoryEmojisForLevel,
+      clearShowTimeouts,
+      resetPlayerInputs,
+      stopInputTimer,
+    ],
   );
 
   // Mevcut ilerlemeyi localStorage'a kaydeder
@@ -781,6 +914,7 @@ export function useGame(): UseGameReturn {
     emojiSequence,
     currentInputCategory,
     categoryOrder,
+    activeCategoryEmojis,
     startGame,
     handleCellClick,
     nextLevel,

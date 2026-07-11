@@ -1,4 +1,4 @@
-import type { EmojiType, ResultStatus } from "../hooks/useGame";
+import { EMOJI_MAP, type EmojiType, type ResultStatus } from "../hooks/useGame";
 
 export interface CellProps {
   index: number;
@@ -13,11 +13,6 @@ export interface CellProps {
   isEmojiMode: boolean;
   onClick: (index: number) => void;
 }
-
-const EMOJI_DISPLAY: Record<EmojiType, string> = {
-  cat: "🐱",
-  bear: "🐻",
-};
 
 // Kare durumuna göre Tailwind sınıflarını döner
 function getCellClassName(
@@ -101,7 +96,7 @@ export function Cell({
       phase === "showing" &&
       index === activeIndex &&
       emoji !== null ? (
-        <span className="text-[2rem] leading-none">{EMOJI_DISPLAY[emoji]}</span>
+        <span className="text-[2rem] leading-none">{EMOJI_MAP[emoji]}</span>
       ) : (
         sequenceOrder !== null && <span>{sequenceOrder}</span>
       )}

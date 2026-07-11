@@ -24,7 +24,7 @@ function getCellClassName(
   resultStatus: ResultStatus | null,
 ): string {
   const base =
-    "relative flex aspect-square w-full items-center justify-center rounded-[2px] border border-mnemo-border text-lg font-semibold transition-all duration-300 cursor-pointer select-none";
+    "relative flex aspect-square w-full items-center justify-center rounded-[2px] border border-mnemo-border text-lg font-semibold transition-all duration-300 cursor-pointer select-none outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:outline-none";
 
   // Result renkleri yalnızca result fazında uygulanır
   if (phase === "result") {
@@ -43,6 +43,16 @@ function getCellClassName(
     if (resultStatus === "missed") {
       return `${base} border-transparent bg-blue-500 text-white shadow-md`;
     }
+
+    const row = Math.floor(index / gridSize);
+    const col = index % gridSize;
+    const isLight = (row + col) % 2 === 0;
+
+    if (isLight) {
+      return `${base} border-transparent bg-[#F0D9B5]`;
+    }
+
+    return `${base} border-transparent bg-[#B58863]`;
   }
 
   if (isActive) {

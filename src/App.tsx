@@ -8,6 +8,9 @@ import { getLevelConfig } from "./utils/levels";
 const debugButtonClassName =
   "rounded-[8px] bg-[#2A2A45] px-2 py-1.5 text-xs text-[#6B6B8A] transition-colors hover:bg-[#3A3A60] active:scale-95";
 
+const secondaryButtonClassName =
+  "rounded-[6px] border border-mnemo-border bg-mnemo-cell px-8 py-3 font-medium text-mnemo-hud transition-colors hover:bg-mnemo-cell-hover hover:text-white active:scale-95";
+
 const buttonClassName =
   "rounded-[6px] bg-mnemo-primary px-8 py-3 font-medium text-white transition-colors hover:bg-mnemo-primary-hover active:scale-95";
 
@@ -32,7 +35,6 @@ function calculateRoundAverage(roundHistory: number[]): number {
 
 function App() {
   const [showLevelSelect, setShowLevelSelect] = useState(false);
-  const [levelSelectDismissed, setLevelSelectDismissed] = useState(false);
 
   const {
     phase,
@@ -52,6 +54,7 @@ function App() {
     activeCategoryEmojis,
     handleCellClick,
     startGame,
+    nextLevel,
     pauseGame,
     resumeGame,
     jumpToLevel,
@@ -67,19 +70,16 @@ function App() {
     !isPaused &&
     (phase === "showing" || phase === "input" || phase === "result");
 
-  const handleDebugLevelSelect = (targetLevel: number): void => {
+  const handleLevelSelect = (targetLevel: number): void => {
     selectLevelAndStart(targetLevel);
     setShowLevelSelect(false);
   };
 
   useEffect(() => {
     if (levelComplete) {
-      setLevelSelectDismissed(false);
+      setShowLevelSelect(false);
     }
   }, [levelComplete]);
-
-  const showCompleteLevelSelect =
-    levelComplete === true && !levelSelectDismissed && !isPaused;
 
   return (
     <>
@@ -107,12 +107,31 @@ function App() {
               Devam Et
             </button>
           </section>
-        ) : showCompleteLevelSelect ? (
-          <LevelSelect
-            currentLevel={level}
-            onSelectLevel={selectLevelAndStart}
-            onClose={() => setLevelSelectDismissed(true)}
-          />
+        ) : levelComplete && !isPaused ? (
+          <section className="flex w-full max-w-md flex-col items-center gap-6 rounded-[6px] border border-mnemo-border bg-mnemo-cell px-6 py-10 text-center">
+            <h2 className="text-2xl font-semibold text-mnemo-primary-hover">
+              Bölüm Tamamlandı!
+            </h2>
+            <p className="text-mnemo-hud">
+              Son 10 tur ortalaması: %{formattedAverage}
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                className={buttonClassName}
+                onClick={nextLevel}
+              >
+                Sonraki Bölüm
+              </button>
+              <button
+                type="button"
+                className={secondaryButtonClassName}
+                onClick={() => setShowLevelSelect(true)}
+              >
+                Bölüm Seç
+              </button>
+            </div>
+          </section>
         ) : (
           <>
             {isEmojiMode && activeCategoryEmojis !== null && (
@@ -169,12 +188,12 @@ function App() {
         )}
       </div>
 
-      {DEBUG_MODE && showLevelSelect && (
+      {showLevelSelect && (
         <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-8">
           <div className="w-full max-w-2xl">
             <LevelSelect
               currentLevel={level}
-              onSelectLevel={handleDebugLevelSelect}
+              onSelectLevel={handleLevelSelect}
               onClose={() => setShowLevelSelect(false)}
             />
           </div>

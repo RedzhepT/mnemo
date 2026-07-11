@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Grid } from "./components/Grid";
+import { HelpModal } from "./components/HelpModal";
 import { LevelSelect } from "./components/LevelSelect";
+import { Onboarding, ONBOARDING_SEEN_KEY } from "./components/Onboarding";
 import { useGame, EMOJI_MAP } from "./hooks/useGame";
 import { DEBUG_MODE, MAX_LEVEL } from "./utils/constants";
 import { getLevelConfig } from "./utils/levels";
@@ -35,6 +37,7 @@ function calculateRoundAverage(roundHistory: number[]): number {
 
 function App() {
   const [showLevelSelect, setShowLevelSelect] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const {
     phase,
@@ -76,6 +79,12 @@ function App() {
   };
 
   useEffect(() => {
+    if (localStorage.getItem(ONBOARDING_SEEN_KEY) !== "true") {
+      setShowOnboarding(true);
+    }
+  }, []);
+
+  useEffect(() => {
     if (levelComplete) {
       setShowLevelSelect(false);
     }
@@ -83,6 +92,12 @@ function App() {
 
   return (
     <>
+      <HelpModal />
+
+      {showOnboarding && (
+        <Onboarding onComplete={() => setShowOnboarding(false)} />
+      )}
+
       <div className="flex min-h-svh flex-col items-center justify-center gap-8 bg-mnemo-bg px-4 py-8">
         <header className="flex w-full max-w-md items-center justify-between gap-4 text-lg font-medium text-mnemo-hud">
           <span>Bölüm: {level}</span>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Grid } from "./components/Grid";
-import { HelpModal } from "./components/HelpModal";
+import { HelpButton, HelpModal } from "./components/HelpModal";
 import { LevelSelect } from "./components/LevelSelect";
 import { Onboarding, ONBOARDING_SEEN_KEY } from "./components/Onboarding";
 import { useGame, EMOJI_MAP } from "./hooks/useGame";
@@ -38,6 +38,7 @@ function calculateRoundAverage(roundHistory: number[]): number {
 function App() {
   const [showLevelSelect, setShowLevelSelect] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const {
     phase,
@@ -90,23 +91,34 @@ function App() {
     }
   }, [levelComplete]);
 
+  const showEmojiInfo = isEmojiMode && activeCategoryEmojis !== null;
+  const showClickPrompt =
+    isEmojiMode && phase === "input" && currentInputCategory !== null;
+
   return (
     <>
-      <HelpModal />
-
       {showOnboarding && (
         <Onboarding onComplete={() => setShowOnboarding(false)} />
       )}
 
-      <div className="flex min-h-svh flex-col items-center justify-center gap-8 bg-mnemo-bg px-4 py-8">
-        <header className="flex w-full max-w-md items-center justify-between gap-4 text-lg font-medium text-mnemo-hud">
-          <span>Bölüm: {level}</span>
-          <span>Ort: %{formattedAverage}</span>
-          <span>Puan: %{score.toFixed(1)}</span>
+      <HelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
+
+      <div className="flex h-svh min-h-0 flex-col overflow-hidden bg-mnemo-bg">
+        <header className="mnemo-hud shrink-0 px-4 py-3">
+          <div className="mx-auto flex w-full max-w-lg items-center justify-center gap-3 text-sm font-medium text-mnemo-hud sm:gap-4 sm:text-base">
+            <span className="whitespace-nowrap">Bölüm: {level}</span>
+            <span className="whitespace-nowrap">Ort: %{formattedAverage}</span>
+            <span className="whitespace-nowrap">Puan: %{score.toFixed(1)}</span>
+            <HelpButton
+              isOpen={helpOpen}
+              onClick={() => setHelpOpen((previous) => !previous)}
+            />
+          </div>
         </header>
 
-        {isPaused ? (
-          <section className="flex w-full max-w-md flex-col items-center gap-6 rounded-[6px] border border-mnemo-border bg-mnemo-cell px-6 py-10 text-center">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-3">
+          {isPaused ? (
+            <section className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-6 rounded-[6px] border border-mnemo-border bg-mnemo-cell px-6 py-8 text-center">
             <h2 className="text-2xl font-semibold text-white">
               Oyun duraklatıldı
             </h2>
@@ -122,8 +134,8 @@ function App() {
               Devam Et
             </button>
           </section>
-        ) : levelComplete && !isPaused ? (
-          <section className="flex w-full max-w-md flex-col items-center gap-6 rounded-[6px] border border-mnemo-border bg-mnemo-cell px-6 py-10 text-center">
+          ) : levelComplete && !isPaused ? (
+            <section className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-6 rounded-[6px] border border-mnemo-border bg-mnemo-cell px-6 py-8 text-center">
             <h2 className="text-2xl font-semibold text-mnemo-primary-hover">
               Bölüm Tamamlandı!
             </h2>
@@ -146,72 +158,90 @@ function App() {
                 Bölüm Seç
               </button>
             </div>
-          </section>
-        ) : (
-          <>
-            {isEmojiMode && activeCategoryEmojis !== null && (
-              <p className="text-sm text-mnemo-hud">
-                Bölüm emojileri: {EMOJI_MAP[activeCategoryEmojis[0]]}{" "}
-                {EMOJI_MAP[activeCategoryEmojis[1]]}
+            </section>
+          ) : (
+            <div className="mx-auto flex h-full min-h-0 w-full max-w-lg flex-col">
+              <p
+                className={`flex h-5 shrink-0 items-center justify-center text-sm text-mnemo-hud ${
+                  showEmojiInfo ? "visible" : "invisible"
+                }`}
+              >
+                {showEmojiInfo && activeCategoryEmojis !== null
+                  ? `Bölüm emojileri: ${EMOJI_MAP[activeCategoryEmojis[0]]} ${EMOJI_MAP[activeCategoryEmojis[1]]}`
+                  : " "}
               </p>
-            )}
 
-            {isEmojiMode &&
-              phase === "input" &&
-              currentInputCategory !== null && (
-                <p className="text-2xl font-semibold text-white">
-                  Şimdi tıkla: {EMOJI_MAP[currentInputCategory]}
-                </p>
-              )}
-
-            <main className="w-full">
-              <Grid
-                gridSize={gridSize}
-                sequence={sequence}
-                playerInput={playerInput}
-                allPlayerInputs={allPlayerInputs}
-                phase={phase}
-                activeIndex={activeIndex}
-                resultMap={resultMap}
-                emojiSequence={emojiSequence}
-                isEmojiMode={isEmojiMode}
-                currentInputCategory={currentInputCategory}
-                onCellClick={handleCellClick}
-              />
-            </main>
-
-            {showStartButton && (
-              <button
-                type="button"
-                className={buttonClassName}
-                onClick={startGame}
+              <p
+                className={`flex h-10 shrink-0 items-center justify-center text-xl font-semibold text-white sm:text-2xl ${
+                  showClickPrompt ? "visible" : "invisible"
+                }`}
               >
-                Başla
-              </button>
-            )}
+                {showClickPrompt && currentInputCategory !== null
+                  ? `Şimdi tıkla: ${EMOJI_MAP[currentInputCategory]}`
+                  : " "}
+              </p>
 
-            {showPauseButton && (
-              <button
-                type="button"
-                className="rounded-[6px] border border-mnemo-border bg-mnemo-cell px-8 py-3 font-medium text-mnemo-hud transition-colors hover:bg-mnemo-cell-hover hover:text-white active:scale-95"
-                onClick={pauseGame}
-              >
-                Ara Ver
-              </button>
-            )}
-          </>
-        )}
+              <main className="relative min-h-0 w-full flex-1">
+                <div className="absolute inset-0 m-auto aspect-square max-h-full max-w-full">
+                  <Grid
+                    gridSize={gridSize}
+                    sequence={sequence}
+                    playerInput={playerInput}
+                    allPlayerInputs={allPlayerInputs}
+                    phase={phase}
+                    activeIndex={activeIndex}
+                    resultMap={resultMap}
+                    emojiSequence={emojiSequence}
+                    isEmojiMode={isEmojiMode}
+                    currentInputCategory={currentInputCategory}
+                    onCellClick={handleCellClick}
+                  />
+                </div>
+              </main>
+
+              <div className="flex h-[7.25rem] shrink-0 flex-col items-center justify-center gap-2 pt-1">
+                {phase === "result" && (
+                  <button
+                    type="button"
+                    className={buttonClassName}
+                    onClick={startGame}
+                  >
+                    Sonraki Tur
+                  </button>
+                )}
+
+                {showStartButton && (
+                  <button
+                    type="button"
+                    className={buttonClassName}
+                    onClick={startGame}
+                  >
+                    Başla
+                  </button>
+                )}
+
+                {showPauseButton && (
+                  <button
+                    type="button"
+                    className="rounded-[6px] border border-mnemo-border bg-mnemo-cell px-8 py-3 font-medium text-mnemo-hud transition-colors hover:bg-mnemo-cell-hover hover:text-white active:scale-95"
+                    onClick={pauseGame}
+                  >
+                    Ara Ver
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {showLevelSelect && (
-        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-8">
-          <div className="w-full max-w-2xl">
-            <LevelSelect
-              currentLevel={level}
-              onSelectLevel={handleLevelSelect}
-              onClose={() => setShowLevelSelect(false)}
-            />
-          </div>
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-3 sm:p-4">
+          <LevelSelect
+            currentLevel={level}
+            onSelectLevel={handleLevelSelect}
+            onClose={() => setShowLevelSelect(false)}
+          />
         </div>
       )}
 

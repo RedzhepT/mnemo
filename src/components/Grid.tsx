@@ -76,7 +76,7 @@ export function Grid({
 
   return (
     <div
-      className={`grid w-full max-w-md gap-0.5 ${gridColsClass} mx-auto px-4 sm:max-w-lg`}
+      className={`grid h-full w-full gap-0.5 ${gridColsClass}`}
     >
       {Array.from({ length: cellCount }, (_, index) => (
         <Cell

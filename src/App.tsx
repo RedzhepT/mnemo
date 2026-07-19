@@ -3,6 +3,7 @@ import { AuthModal } from "./components/AuthModal";
 import { Grid } from "./components/Grid";
 import { HelpButton, HelpModal } from "./components/HelpModal";
 import { LevelSelect } from "./components/LevelSelect";
+import { SaveAccount } from "./components/SaveAccount";
 import { Onboarding, ONBOARDING_SEEN_KEY } from "./components/Onboarding";
 import { useGame, EMOJI_MAP } from "./hooks/useGame";
 import { getCurrentUser } from "./lib/auth";
@@ -51,6 +52,7 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showSaveAccount, setShowSaveAccount] = useState(false);
 
   const {
     phase,
@@ -69,10 +71,10 @@ function App() {
     currentInputCategory,
     activeCategoryEmojis,
     authPromptRequested,
+    isAnonymous,
     handleCellClick,
     startGame,
     nextLevel,
-    pauseGame,
     resumeGame,
     jumpToLevel,
     selectLevelAndStart,
@@ -85,9 +87,6 @@ function App() {
   const roundAverage = calculateRoundAverage(roundHistory);
   const formattedAverage = roundAverage.toFixed(1);
   const showStartButton = phase === "idle" && !isPaused;
-  const showPauseButton =
-    !isPaused &&
-    (phase === "showing" || phase === "input" || phase === "result");
 
   const handleLevelSelect = (targetLevel: number): void => {
     selectLevelAndStart(targetLevel);
@@ -170,12 +169,26 @@ function App() {
 
       <HelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
 
+      <SaveAccount
+        isOpen={showSaveAccount}
+        onClose={() => setShowSaveAccount(false)}
+      />
+
       <div className="flex h-svh min-h-0 flex-col overflow-hidden bg-mnemo-bg">
         <header className="mnemo-hud shrink-0 px-4 py-3">
           <div className="mx-auto flex w-full max-w-lg items-center justify-center gap-3 text-sm font-medium text-mnemo-hud sm:gap-4 sm:text-base">
             <span className="whitespace-nowrap">Bölüm: {level}</span>
             <span className="whitespace-nowrap">Ort: %{formattedAverage}</span>
             <span className="whitespace-nowrap">Puan: %{score.toFixed(1)}</span>
+            {isAnonymous && (
+              <button
+                type="button"
+                className="whitespace-nowrap rounded-[6px] bg-[#2A2A45] px-2 py-1 text-xs font-medium text-[#6B6B8A] transition-colors hover:bg-[#3A3A60] hover:text-[#F0D9B5] active:scale-95"
+                onClick={() => setShowSaveAccount(true)}
+              >
+                Hesabımı Kaydet
+              </button>
+            )}
             <HelpButton
               isOpen={helpOpen}
               onClick={() => setHelpOpen((previous) => !previous)}
@@ -284,16 +297,6 @@ function App() {
                     onClick={startGame}
                   >
                     Başla
-                  </button>
-                )}
-
-                {showPauseButton && (
-                  <button
-                    type="button"
-                    className="rounded-[6px] border border-mnemo-border bg-mnemo-cell px-8 py-3 font-medium text-mnemo-hud transition-colors hover:bg-mnemo-cell-hover hover:text-white active:scale-95"
-                    onClick={pauseGame}
-                  >
-                    Ara Ver
                   </button>
                 )}
               </div>

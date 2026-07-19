@@ -125,6 +125,7 @@ export interface UseGameReturn {
   categoryOrder: EmojiType[];
   activeCategoryEmojis: [EmojiType, EmojiType] | null;
   authPromptRequested: boolean;
+  isAnonymous: boolean;
   startGame: () => void;
   handleCellClick: (index: number) => void;
   nextLevel: () => void;
@@ -334,6 +335,7 @@ export function useGame(): UseGameReturn {
   >(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [authPromptRequested, setAuthPromptRequested] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(false);
 
   const showTimeoutsRef = useRef<number[]>([]);
   const inputTimerRef = useRef<number | null>(null);
@@ -955,12 +957,22 @@ export function useGame(): UseGameReturn {
       setUserId(id);
     });
 
+    void supabase.auth.getSession().then(({ data }) => {
+      if (cancelled) {
+        return;
+      }
+
+      setIsAnonymous(data.session?.user?.is_anonymous === true);
+    });
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (cancelled) {
         return;
       }
+
+      setIsAnonymous(session?.user?.is_anonymous === true);
 
       if (session?.user) {
         void ensureAnalyticsUser(session.user.id).then((analyticsUserId) => {
@@ -1053,6 +1065,7 @@ export function useGame(): UseGameReturn {
     categoryOrder,
     activeCategoryEmojis,
     authPromptRequested,
+    isAnonymous,
     startGame,
     handleCellClick,
     nextLevel,

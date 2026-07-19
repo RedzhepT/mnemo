@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ensureAnalyticsUser,
-  initUser,
   saveLevelCompletion,
   saveRoundResult,
 } from "../lib/analytics";
+import { resolveIsAnonymous } from "../lib/auth";
 import { supabase } from "../lib/supabase";
 import { MAX_LEVEL, MIN_ROUNDS_TO_COMPLETE } from "../utils/constants";
 import { getLevelConfig } from "../utils/levels";
@@ -948,21 +948,14 @@ export function useGame(): UseGameReturn {
   useEffect(() => {
     let cancelled = false;
 
-    void initUser().then((id) => {
-      if (cancelled || !id) {
-        return;
-      }
-
-      userIdRef.current = id;
-      setUserId(id);
-    });
-
-    void supabase.auth.getSession().then(({ data }) => {
+    void supabase.auth.getUser().then(({ data: { user } }) => {
       if (cancelled) {
         return;
       }
 
-      setIsAnonymous(data.session?.user?.is_anonymous === true);
+      const anonymous = resolveIsAnonymous(user);
+      console.log("getUser email:", user?.email ?? null, "isAnonymous:", anonymous);
+      setIsAnonymous(anonymous);
     });
 
     const {
@@ -972,7 +965,15 @@ export function useGame(): UseGameReturn {
         return;
       }
 
-      setIsAnonymous(session?.user?.is_anonymous === true);
+      const user = session?.user ?? null;
+      const anonymous = resolveIsAnonymous(user);
+      console.log(
+        "onAuthStateChange email:",
+        user?.email ?? null,
+        "isAnonymous:",
+        anonymous,
+      );
+      setIsAnonymous(anonymous);
 
       if (session?.user) {
         void ensureAnalyticsUser(session.user.id).then((analyticsUserId) => {

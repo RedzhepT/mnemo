@@ -1,6 +1,11 @@
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 
+// Email yoksa kullanıcıyı anonim sayar (is_anonymous alanı güvenilir değil)
+export function resolveIsAnonymous(user: User | null | undefined): boolean {
+  return !user?.email;
+}
+
 // Email adresine magic link gönderir
 export async function signInWithMagicLink(email: string): Promise<void> {
   const { error } = await supabase.auth.signInWithOtp({

@@ -6,7 +6,8 @@ import { LevelSelect } from "./components/LevelSelect";
 import { SaveAccount } from "./components/SaveAccount";
 import { Onboarding, ONBOARDING_SEEN_KEY } from "./components/Onboarding";
 import { useGame, EMOJI_MAP } from "./hooks/useGame";
-import { getCurrentUser } from "./lib/auth";
+import { getCurrentUser, resolveIsAnonymous } from "./lib/auth";
+import { endSession, initUser, startSession } from "./lib/analytics";
 import { supabase } from "./lib/supabase";
 import { Landing, AUTH_SHOWN_KEY } from "./pages/Landing";
 import { DEBUG_MODE, MAX_LEVEL } from "./utils/constants";
@@ -53,6 +54,7 @@ function App() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSaveAccount, setShowSaveAccount] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(false);
 
   const {
     phase,
@@ -71,7 +73,6 @@ function App() {
     currentInputCategory,
     activeCategoryEmojis,
     authPromptRequested,
-    isAnonymous,
     handleCellClick,
     startGame,
     nextLevel,
@@ -81,6 +82,8 @@ function App() {
     clearAuthPrompt,
     setAuthenticatedUser,
   } = useGame();
+
+  console.log("isAnonymous:", isAnonymous);
 
   const { gridSize, mode } = getLevelConfig(level);
   const isEmojiMode = mode === "emoji";
@@ -113,6 +116,52 @@ function App() {
       setAuthenticatedUser(user.id);
       setShowLanding(false);
     });
+  }, [setAuthenticatedUser]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    console.log("App initUser çağırıyor");
+    void initUser().then((userId) => {
+      if (cancelled || !userId) {
+        return;
+      }
+
+      setAuthenticatedUser(userId);
+      void startSession(userId);
+    });
+
+    void supabase.auth.getUser().then(({ data: { user } }) => {
+      if (cancelled) {
+        return;
+      }
+
+      const anonymous = resolveIsAnonymous(user);
+      console.log("App getUser email:", user?.email ?? null, "isAnonymous:", anonymous);
+      setIsAnonymous(anonymous);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (cancelled) {
+        return;
+      }
+
+      setIsAnonymous(resolveIsAnonymous(session?.user ?? null));
+    });
+
+    const handleBeforeUnload = (): void => {
+      void endSession();
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
   }, [setAuthenticatedUser]);
 
   useEffect(() => {

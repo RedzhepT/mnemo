@@ -74,13 +74,7 @@ export function Landing({ onEnterGame, onAuthenticated }: LandingProps) {
     setErrorMessage(null);
 
     try {
-      const savedId = localStorage.getItem(USER_ID_KEY);
-
-      if (savedId) {
-        finishAndEnter(savedId);
-        return;
-      }
-
+      // Oturum yoksa anonim giriş zorunlu; aksi halde isAnonymous false kalır
       const user = await signInAnonymously();
       localStorage.setItem(USER_ID_KEY, user.id);
       finishAndEnter(user.id);

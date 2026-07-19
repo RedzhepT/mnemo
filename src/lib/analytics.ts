@@ -1,120 +1,89 @@
 import { supabase } from "./supabase";
 
 const USER_ID_KEY = "mnemo_user_id";
+const SESSION_ID_KEY = "mnemo_session_id";
 
-export type DeviceType = "mobile" | "desktop";
-
-// Cihaz tipini user agent üzerinden algılar
-function detectDevice(): DeviceType {
-  return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-    ? "mobile"
-    : "desktop";
-}
-
-// Tarayıcı adını user agent üzerinden algılar
-function detectBrowser(): string {
-  const userAgent = navigator.userAgent;
-
-  if (userAgent.includes("Edg/")) {
-    return "Edge";
-  }
-
-  if (userAgent.includes("Chrome/") && !userAgent.includes("Edg/")) {
-    return "Chrome";
-  }
-
-  if (userAgent.includes("Firefox/")) {
-    return "Firefox";
-  }
-
-  if (userAgent.includes("Safari/") && !userAgent.includes("Chrome/")) {
-    return "Safari";
-  }
-
-  return "Unknown";
-}
-
-// users tablosunda ID varsa döner, yoksa insert eder
-async function selectOrInsertUser(userId: string): Promise<string | null> {
-  try {
-    const { data: existing, error: selectError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("id", userId)
-      .maybeSingle();
-
-    if (selectError) {
-      console.error("Kullanıcı select hatası:", selectError.message);
-    }
-
-    if (existing?.id) {
-      localStorage.setItem(USER_ID_KEY, userId);
-      return userId;
-    }
-
-    const { error: insertError } = await supabase.from("users").insert({
-      id: userId,
-      device: detectDevice(),
-      browser: detectBrowser(),
-      country: null,
-    });
-
-    if (insertError) {
-      // Başka bir eşzamanlı insert başarılı olmuş olabilir
-      if (insertError.code === "23505") {
-        localStorage.setItem(USER_ID_KEY, userId);
-        return userId;
-      }
-
-      console.error("Kullanıcı insert hatası:", insertError.message);
-      return null;
-    }
-
-    localStorage.setItem(USER_ID_KEY, userId);
-    return userId;
-  } catch (error) {
-    console.error("selectOrInsertUser beklenmeyen hata:", error);
-    return null;
-  }
-}
-
-// Analytics kullanıcısını başlatır; kayıtlı ID varsa insert yapmaz
 export async function initUser(): Promise<string> {
-  // 1. localStorage'da kayıtlı ID var mı?
   const savedId = localStorage.getItem('mnemo_user_id');
-  
   if (savedId) {
-    // 2. Varsa direkt döndür, hiçbir şey insert etme
+    console.log('Mevcut ID kullanılıyor:', savedId);
     return savedId;
   }
   
-  // 3. Yoksa anonim giriş yap
-  const { data: authData } = await supabase.auth.signInAnonymously();
-  const userId = authData?.user?.id ?? crypto.randomUUID();
+  console.log('Yeni kullanıcı oluşturuluyor');
+  const { data } = await supabase.auth.signInAnonymously();
+  const userId = data?.user?.id ?? crypto.randomUUID();
   
-  // 4. users tablosuna insert et (sadece ilk kez)
-  await supabase.from('users').insert({
+  const { error } = await supabase.from('users').insert({
     id: userId,
     device: /Mobi/.test(navigator.userAgent) ? 'mobile' : 'desktop',
-    browser: navigator.userAgent.includes('Chrome') ? 'Chrome' : 
-             navigator.userAgent.includes('Firefox') ? 'Firefox' : 'Other',
+    browser: navigator.userAgent.includes('Chrome') ? 'Chrome' : 'Other',
     country: null
   });
   
-  // 5. localStorage'a kaydet
+  if (error) {
+    console.error('Insert hatası:', error.code, error.message);
+  }
+  
   localStorage.setItem('mnemo_user_id', userId);
   return userId;
 }
 
-// Bilinen auth kullanıcı id'sini analytics users tablosunda garantiler
+// Auth kullanıcı id'sini localStorage'a yazar (users insert yapmaz)
 export async function ensureAnalyticsUser(
   authUserId: string,
 ): Promise<string | null> {
+  localStorage.setItem(USER_ID_KEY, authUserId);
+  return authUserId;
+}
+
+// Yeni analytics oturumu başlatır ve session id'yi localStorage'a yazar
+export async function startSession(userId: string): Promise<string | null> {
   try {
-    return await selectOrInsertUser(authUserId);
+    const { data, error } = await supabase
+      .from("sessions")
+      .insert({
+        user_id: userId,
+        started_at: new Date().toISOString(),
+        ended_at: null,
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("Oturum başlatma hatası:", error.message);
+      return null;
+    }
+
+    localStorage.setItem(SESSION_ID_KEY, data.id);
+    return data.id;
   } catch (error) {
-    console.error("ensureAnalyticsUser beklenmeyen hata:", error);
+    console.error("startSession beklenmeyen hata:", error);
     return null;
+  }
+}
+
+// Açık analytics oturumunu kapatır ve localStorage'dan siler
+export async function endSession(): Promise<void> {
+  const sessionId = localStorage.getItem(SESSION_ID_KEY);
+
+  if (!sessionId) {
+    return;
+  }
+
+  try {
+    const { error } = await supabase
+      .from("sessions")
+      .update({ ended_at: new Date().toISOString() })
+      .eq("id", sessionId);
+
+    if (error) {
+      console.error("Oturum kapatma hatası:", error.message);
+    }
+  } catch (error) {
+    console.error("endSession beklenmeyen hata:", error);
+  } finally {
+    localStorage.removeItem(SESSION_ID_KEY);
   }
 }
 

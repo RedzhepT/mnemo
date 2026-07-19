@@ -1,3 +1,5 @@
+Soru: Şimdi biraz oyun hakkında sohbet etmek istiyorum. Sence bu oyun odaklanma ve hafıza gibi konularda insanlara yardımcı olur mu? İlerleyen seviyelerde çok farklı şeyler olacak. Bir kedi ve bir ayı resmi olacak. İlk raundda kedileri hemen de arkasından ayıları tıklaması istenecek.
+
 Şu an yaptığın şey aslında nörobilimde working memory (çalışma belleği) egzersizi olarak bilinen şeyin tam karşılığı. Beyin bir sırayı kısa süreli bellekte tutuyor, sonra motor tepkiyle eşleştiriyor. Bu tam olarak antrenman edilebilir bir beceri.
 
 Resimli versiyon ise işi bir üst seviyeye taşıyor. "Önce kedileri, sonra ayıları" senaryosu sadece hafızayı değil, kategori ayrıştırması ve sıralı planlama da gerektiriyor. Beyin aynı anda birden fazla kuralı aktif tutmak zorunda — bu çalışma belleğinin en zorlu egzersizlerinden biri.

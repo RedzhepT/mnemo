@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
+import { AuthModal } from "./components/AuthModal";
 import { Grid } from "./components/Grid";
 import { HelpButton, HelpModal } from "./components/HelpModal";
 import { LevelSelect } from "./components/LevelSelect";
 import { Onboarding, ONBOARDING_SEEN_KEY } from "./components/Onboarding";
 import { useGame, EMOJI_MAP } from "./hooks/useGame";
+import { getCurrentUser } from "./lib/auth";
+import { supabase } from "./lib/supabase";
+import { Landing, AUTH_SHOWN_KEY } from "./pages/Landing";
 import { DEBUG_MODE, MAX_LEVEL } from "./utils/constants";
 import { getLevelConfig } from "./utils/levels";
 
@@ -18,10 +22,17 @@ const buttonClassName =
 
 const SAVE_KEY = "mnemo_save";
 
-// Kayıtlı ilerlemeyi siler ve sayfayı yeniler
+const USER_ID_KEY = "mnemo_user_id";
+
+// Kayıtlı ilerlemeyi ve auth durumunu siler, landing'e döner
 function handleResetLevel(): void {
   localStorage.removeItem(SAVE_KEY);
-  window.location.reload();
+  localStorage.removeItem(AUTH_SHOWN_KEY);
+  localStorage.removeItem(USER_ID_KEY);
+  localStorage.removeItem(ONBOARDING_SEEN_KEY);
+  void supabase.auth.signOut().finally(() => {
+    window.location.reload();
+  });
 }
 
 // Tur geçmişinin ortalama puanını hesaplar
@@ -36,9 +47,13 @@ function calculateRoundAverage(roundHistory: number[]): number {
 }
 
 function App() {
+  const [showLanding, setShowLanding] = useState(
+    () => localStorage.getItem(AUTH_SHOWN_KEY) !== "true",
+  );
   const [showLevelSelect, setShowLevelSelect] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const {
     phase,
@@ -56,6 +71,7 @@ function App() {
     emojiSequence,
     currentInputCategory,
     activeCategoryEmojis,
+    authPromptRequested,
     handleCellClick,
     startGame,
     nextLevel,
@@ -63,6 +79,8 @@ function App() {
     resumeGame,
     jumpToLevel,
     selectLevelAndStart,
+    clearAuthPrompt,
+    setAuthenticatedUser,
   } = useGame();
 
   const { gridSize, mode } = getLevelConfig(level);
@@ -79,11 +97,37 @@ function App() {
     setShowLevelSelect(false);
   };
 
+  const handleEnterGame = (): void => {
+    localStorage.setItem(AUTH_SHOWN_KEY, "true");
+    setShowLanding(false);
+  };
+
   useEffect(() => {
+    if (localStorage.getItem(AUTH_SHOWN_KEY) === "true") {
+      return;
+    }
+
+    // Magic link dönüşünde oturum varsa landing'i atla
+    void getCurrentUser().then((user) => {
+      if (!user) {
+        return;
+      }
+
+      localStorage.setItem(AUTH_SHOWN_KEY, "true");
+      setAuthenticatedUser(user.id);
+      setShowLanding(false);
+    });
+  }, [setAuthenticatedUser]);
+
+  useEffect(() => {
+    if (showLanding) {
+      return;
+    }
+
     if (localStorage.getItem(ONBOARDING_SEEN_KEY) !== "true") {
       setShowOnboarding(true);
     }
-  }, []);
+  }, [showLanding]);
 
   useEffect(() => {
     if (levelComplete) {
@@ -91,14 +135,40 @@ function App() {
     }
   }, [levelComplete]);
 
+  useEffect(() => {
+    if (!authPromptRequested || showLanding) {
+      return;
+    }
+
+    setShowAuthModal(true);
+    clearAuthPrompt();
+  }, [authPromptRequested, clearAuthPrompt, showLanding]);
+
   const showEmojiInfo = isEmojiMode && activeCategoryEmojis !== null;
   const showClickPrompt =
     isEmojiMode && phase === "input" && currentInputCategory !== null;
+
+  if (showLanding) {
+    return (
+      <Landing
+        onEnterGame={handleEnterGame}
+        onAuthenticated={setAuthenticatedUser}
+      />
+    );
+  }
 
   return (
     <>
       {showOnboarding && (
         <Onboarding onComplete={() => setShowOnboarding(false)} />
+      )}
+
+      {showAuthModal && (
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          onAuthenticated={setAuthenticatedUser}
+        />
       )}
 
       <HelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
@@ -119,45 +189,45 @@ function App() {
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-3">
           {isPaused ? (
             <section className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-6 rounded-[6px] border border-mnemo-border bg-mnemo-cell px-6 py-8 text-center">
-            <h2 className="text-2xl font-semibold text-white">
-              Oyun duraklatıldı
-            </h2>
-            <p className="text-mnemo-hud">Tamamlanan tur: {roundCount}</p>
-            <p className="text-mnemo-hud">
-              Son 10 tur ortalaması: %{formattedAverage}
-            </p>
-            <button
-              type="button"
-              className={buttonClassName}
-              onClick={resumeGame}
-            >
-              Devam Et
-            </button>
-          </section>
-          ) : levelComplete && !isPaused ? (
-            <section className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-6 rounded-[6px] border border-mnemo-border bg-mnemo-cell px-6 py-8 text-center">
-            <h2 className="text-2xl font-semibold text-mnemo-primary-hover">
-              Bölüm Tamamlandı!
-            </h2>
-            <p className="text-mnemo-hud">
-              Son 10 tur ortalaması: %{formattedAverage}
-            </p>
-            <div className="flex flex-col gap-3 sm:flex-row">
+              <h2 className="text-2xl font-semibold text-white">
+                Oyun duraklatıldı
+              </h2>
+              <p className="text-mnemo-hud">Tamamlanan tur: {roundCount}</p>
+              <p className="text-mnemo-hud">
+                Son 10 tur ortalaması: %{formattedAverage}
+              </p>
               <button
                 type="button"
                 className={buttonClassName}
-                onClick={nextLevel}
+                onClick={resumeGame}
               >
-                Sonraki Bölüm
+                Devam Et
               </button>
-              <button
-                type="button"
-                className={secondaryButtonClassName}
-                onClick={() => setShowLevelSelect(true)}
-              >
-                Bölüm Seç
-              </button>
-            </div>
+            </section>
+          ) : levelComplete && !isPaused ? (
+            <section className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-6 rounded-[6px] border border-mnemo-border bg-mnemo-cell px-6 py-8 text-center">
+              <h2 className="text-2xl font-semibold text-mnemo-primary-hover">
+                Bölüm Tamamlandı!
+              </h2>
+              <p className="text-mnemo-hud">
+                Son 10 tur ortalaması: %{formattedAverage}
+              </p>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  className={buttonClassName}
+                  onClick={nextLevel}
+                >
+                  Sonraki Bölüm
+                </button>
+                <button
+                  type="button"
+                  className={secondaryButtonClassName}
+                  onClick={() => setShowLevelSelect(true)}
+                >
+                  Bölüm Seç
+                </button>
+              </div>
             </section>
           ) : (
             <div className="mx-auto flex h-full min-h-0 w-full max-w-lg flex-col">

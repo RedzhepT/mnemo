@@ -1,4 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ensureAnalyticsUser,
+  initUser,
+  saveLevelCompletion,
+  saveRoundResult,
+} from "../lib/analytics";
+import { supabase } from "../lib/supabase";
 import { MAX_LEVEL, MIN_ROUNDS_TO_COMPLETE } from "../utils/constants";
 import { getLevelConfig } from "../utils/levels";
 import { calculateScore } from "../utils/scoring";
@@ -117,6 +124,7 @@ export interface UseGameReturn {
   currentInputCategory: InputPhase;
   categoryOrder: EmojiType[];
   activeCategoryEmojis: [EmojiType, EmojiType] | null;
+  authPromptRequested: boolean;
   startGame: () => void;
   handleCellClick: (index: number) => void;
   nextLevel: () => void;
@@ -125,6 +133,8 @@ export interface UseGameReturn {
   resumeGame: () => void;
   jumpToLevel: (targetLevel: number) => void;
   selectLevelAndStart: (targetLevel: number) => void;
+  clearAuthPrompt: () => void;
+  setAuthenticatedUser: (authUserId: string) => void;
 }
 
 // Grid üzerinde tekrarsız rastgele kare indeksleri üretir
@@ -322,6 +332,8 @@ export function useGame(): UseGameReturn {
   const [activeCategoryEmojis, setActiveCategoryEmojis] = useState<
     [EmojiType, EmojiType] | null
   >(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [authPromptRequested, setAuthPromptRequested] = useState(false);
 
   const showTimeoutsRef = useRef<number[]>([]);
   const inputTimerRef = useRef<number | null>(null);
@@ -344,6 +356,10 @@ export function useGame(): UseGameReturn {
   const levelCompleteRef = useRef(false);
   const roundRecordedRef = useRef(false);
   const startGameRef = useRef<() => void>(() => {});
+  const userIdRef = useRef<string | null>(null);
+  const levelRef = useRef(level);
+  const roundCountRef = useRef(roundCount);
+  const authPromptShownRef = useRef(false);
 
   phaseRef.current = phase;
   roundHistoryRef.current = roundHistory;
@@ -356,6 +372,9 @@ export function useGame(): UseGameReturn {
   allPlayerInputsRef.current = allPlayerInputs;
   correctPlayerInputsRef.current = correctPlayerInputs;
   wrongInputIndicesRef.current = wrongInputIndices;
+  userIdRef.current = userId;
+  levelRef.current = level;
+  roundCountRef.current = roundCount;
 
   // Zamanlayıcıları temizler
   const clearShowTimeouts = useCallback(() => {
@@ -417,32 +436,78 @@ export function useGame(): UseGameReturn {
   }, []);
 
   // Tur sonucunu geçmişe kaydeder ve bölüm tamamlanma durumunu günceller
-  const recordRoundResult = useCallback((roundScore: number) => {
-    if (roundRecordedRef.current) {
-      return;
-    }
+  const recordRoundResult = useCallback(
+    (params: {
+      roundScore: number;
+      correctCount: number;
+      totalCount: number;
+      elapsedMs: number;
+    }) => {
+      if (roundRecordedRef.current) {
+        return;
+      }
 
-    roundRecordedRef.current = true;
+      roundRecordedRef.current = true;
 
-    const nextHistory = appendRoundHistory(roundHistoryRef.current, roundScore);
-    const average =
-      nextHistory.reduce((sum, value) => sum + value, 0) / nextHistory.length;
+      const nextHistory = appendRoundHistory(
+        roundHistoryRef.current,
+        params.roundScore,
+      );
+      const average =
+        nextHistory.reduce((sum, value) => sum + value, 0) / nextHistory.length;
+      const wasLevelComplete = levelCompleteRef.current;
+      const isLevelComplete = calculateLevelComplete(nextHistory);
+      const nextRoundCount = roundCountRef.current + 1;
+      const currentUserId = userIdRef.current;
+      const currentLevel = levelRef.current;
 
-    console.log("Tur bitti. Score:", roundScore);
-    console.log("Yeni history:", nextHistory);
-    console.log("History length:", nextHistory.length);
-    console.log("Ortalama:", average);
-    console.log(
-      "levelComplete oldu mu:",
-      nextHistory.length >= MIN_ROUNDS_TO_COMPLETE && average >= 90,
-    );
+      console.log("Tur bitti. Score:", params.roundScore);
+      console.log("Yeni history:", nextHistory);
+      console.log("History length:", nextHistory.length);
+      console.log("Ortalama:", average);
+      console.log(
+        "levelComplete oldu mu:",
+        nextHistory.length >= MIN_ROUNDS_TO_COMPLETE && average >= 90,
+      );
 
-    roundHistoryRef.current = nextHistory;
-    setRoundHistory(nextHistory);
-    setLevelComplete(calculateLevelComplete(nextHistory));
-    setRoundCount((previousCount) => previousCount + 1);
-    setScore(roundScore);
-  }, []);
+      roundHistoryRef.current = nextHistory;
+      roundCountRef.current = nextRoundCount;
+      setRoundHistory(nextHistory);
+      setLevelComplete(isLevelComplete);
+      setRoundCount(nextRoundCount);
+      setScore(params.roundScore);
+
+      if (currentUserId) {
+        void saveRoundResult(
+          currentUserId,
+          currentLevel,
+          params.roundScore,
+          params.elapsedMs,
+          params.correctCount,
+          params.totalCount,
+        );
+
+        if (isLevelComplete && !wasLevelComplete) {
+          void saveLevelCompletion(
+            currentUserId,
+            currentLevel,
+            nextRoundCount,
+            average,
+          );
+        }
+      }
+
+      if (
+        !currentUserId &&
+        nextRoundCount >= 1 &&
+        !authPromptShownRef.current
+      ) {
+        authPromptShownRef.current = true;
+        setAuthPromptRequested(true);
+      }
+    },
+    [],
+  );
 
   // Turu tamamlar ve result fazına geçer
   const completeRound = useCallback(
@@ -479,7 +544,12 @@ export function useGame(): UseGameReturn {
       }
 
       setResultMap(buildResultMap(targetSequence, finalPlayerInput));
-      recordRoundResult(roundScore);
+      recordRoundResult({
+        roundScore,
+        correctCount,
+        totalCount: targetSequence.length,
+        elapsedMs: elapsedMsRef.current,
+      });
       setPhase("result");
       setCurrentInputCategory(null);
       currentInputCategoryRef.current = null;
@@ -874,6 +944,61 @@ export function useGame(): UseGameReturn {
   }, [phase]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    void initUser().then((id) => {
+      if (cancelled || !id) {
+        return;
+      }
+
+      userIdRef.current = id;
+      setUserId(id);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (cancelled) {
+        return;
+      }
+
+      if (session?.user) {
+        void ensureAnalyticsUser(session.user.id).then((analyticsUserId) => {
+          if (cancelled || !analyticsUserId) {
+            return;
+          }
+
+          userIdRef.current = analyticsUserId;
+          setUserId(analyticsUserId);
+        });
+        return;
+      }
+
+      userIdRef.current = null;
+      setUserId(null);
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Auth modal isteğini temizler
+  const clearAuthPrompt = useCallback(() => {
+    setAuthPromptRequested(false);
+  }, []);
+
+  // Auth sonrası kullanıcı id'sini kaydeder
+  const setAuthenticatedUser = useCallback((authUserId: string) => {
+    authPromptShownRef.current = true;
+    setAuthPromptRequested(false);
+    userIdRef.current = authUserId;
+    setUserId(authUserId);
+    void ensureAnalyticsUser(authUserId);
+  }, []);
+
+  useEffect(() => {
     return () => {
       clearShowTimeouts();
       stopInputTimer();
@@ -927,6 +1052,7 @@ export function useGame(): UseGameReturn {
     currentInputCategory,
     categoryOrder,
     activeCategoryEmojis,
+    authPromptRequested,
     startGame,
     handleCellClick,
     nextLevel,
@@ -935,5 +1061,7 @@ export function useGame(): UseGameReturn {
     resumeGame,
     jumpToLevel,
     selectLevelAndStart,
+    clearAuthPrompt,
+    setAuthenticatedUser,
   };
 }

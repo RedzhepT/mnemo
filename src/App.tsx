@@ -22,13 +22,10 @@ const buttonClassName =
 
 const SAVE_KEY = "mnemo_save";
 
-const USER_ID_KEY = "mnemo_user_id";
-
-// Kayıtlı ilerlemeyi ve auth durumunu siler, landing'e döner
+// Oyun ilerlemesini sıfırlar; kullanıcı kimliği korunur
 function handleResetLevel(): void {
   localStorage.removeItem(SAVE_KEY);
   localStorage.removeItem(AUTH_SHOWN_KEY);
-  localStorage.removeItem(USER_ID_KEY);
   localStorage.removeItem(ONBOARDING_SEEN_KEY);
   void supabase.auth.signOut().finally(() => {
     window.location.reload();

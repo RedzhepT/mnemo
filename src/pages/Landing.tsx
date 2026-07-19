@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { getCurrentUser, signInAnonymously, signInWithMagicLink } from "../lib/auth";
+import { signInAnonymously, signInWithMagicLink } from "../lib/auth";
 
 export const AUTH_SHOWN_KEY = "mnemo_auth_shown";
+const USER_ID_KEY = "mnemo_user_id";
 
 export interface LandingProps {
   onEnterGame: () => void;
@@ -73,14 +74,15 @@ export function Landing({ onEnterGame, onAuthenticated }: LandingProps) {
     setErrorMessage(null);
 
     try {
-      const existingUser = await getCurrentUser();
+      const savedId = localStorage.getItem(USER_ID_KEY);
 
-      if (existingUser) {
-        finishAndEnter(existingUser.id);
+      if (savedId) {
+        finishAndEnter(savedId);
         return;
       }
 
       const user = await signInAnonymously();
+      localStorage.setItem(USER_ID_KEY, user.id);
       finishAndEnter(user.id);
     } catch (error) {
       const message =

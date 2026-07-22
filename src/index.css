@@ -26,3 +26,14 @@ body {
 .mnemo-hud {
   border-bottom: 1px solid var(--color-mnemo-border);
 }
+
+/* IOS-ZOOM-FIX: iPhone Safari'de email input kutularına dokununca
+   sayfanın otomatik zoom yapmasını engeller.
+   Sebep: Safari, yazı boyutu 16px'in altında olan input kutularına
+   dokunulduğunda otomatik zoom yapıyor. Bu kural tüm input/select/textarea
+   elementlerinin yazı boyutunu 16px'e sabitliyor. */
+input,
+select,
+textarea {
+  font-size: 16px;
+}

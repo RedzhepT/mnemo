@@ -37,3 +37,11 @@ select,
 textarea {
   font-size: 16px;
 }
+
+/* MOBILE-TAP-FIX: Mobilde hızlı art arda kare tıklarken tarayıcının
+   zoom/gesture algılamasını engeller (oyun hızını etkileyen gecikmelere
+   sebep olabiliyordu) ve dokunulan elementlerde çıkan gri flaş efektini kaldırır. */
+button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}

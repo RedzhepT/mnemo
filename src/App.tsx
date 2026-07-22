@@ -225,7 +225,10 @@ function App() {
 
       <div className="flex h-svh min-h-0 flex-col overflow-hidden bg-mnemo-bg">
         <header className="mnemo-hud shrink-0 px-4 py-3">
-          <div className="mx-auto flex w-full max-w-lg items-center justify-center gap-3 text-sm font-medium text-mnemo-hud sm:gap-4 sm:text-base">
+          {/* HUD-MOBILE-FIX: Dar telefon ekranlarında (360px ve altı) HUD öğelerinin
+              (Bölüm/Ort/Puan/Hesabımı Kaydet/Yardım butonu) kırpılmasını önlemek için
+              gap ve yazı boyutu küçültüldü, sığmazsa yatay kaydırma eklendi. */}
+          <div className="mx-auto flex w-full max-w-lg items-center justify-center overflow-x-auto gap-1.5 text-xs font-medium text-mnemo-hud sm:gap-3 sm:text-sm">
             <span className="whitespace-nowrap">Bölüm: {level}</span>
             <span className="whitespace-nowrap">Ort: %{formattedAverage}</span>
             <span className="whitespace-nowrap">Puan: %{score.toFixed(1)}</span>

@@ -47,6 +47,10 @@ export function PrimusGame() {
   const roundAverage = calculateRoundAverage(roundHistory);
   const formattedAverage = roundAverage.toFixed(1);
   const showBoard = board.length > 0;
+  const remainingSelections = Math.max(
+    0,
+    primeIndices.length - (playerInput.length + wrongInputIndices.length),
+  );
   const sortedPrimes = primeIndices
     .map((index) => board[index])
     .sort((a, b) => a - b);
@@ -89,21 +93,28 @@ export function PrimusGame() {
           </section>
         ) : (
           <div className="mx-auto flex h-full min-h-0 w-full max-w-lg flex-col">
-            <p
-              className={`flex h-10 shrink-0 items-center justify-center text-lg font-semibold text-white sm:text-xl ${
-                phase === "input"
-                  ? "visible"
+            <div className="flex h-14 shrink-0 flex-col items-center justify-center gap-0.5">
+              <p
+                className={`text-lg font-semibold text-white sm:text-xl ${
+                  phase === "input" || phase === "result" ? "visible" : "invisible"
+                }`}
+              >
+                {phase === "input"
+                  ? "Asal sayıları bul"
                   : phase === "result"
-                    ? "visible text-base sm:text-lg"
-                    : "invisible"
-              }`}
-            >
-              {phase === "input"
-                ? "Asal sayıları bul"
-                : phase === "result"
-                  ? primesLabel
+                    ? primesLabel
+                    : " "}
+              </p>
+              <p
+                className={`text-sm text-mnemo-hud ${
+                  phase === "input" ? "visible" : "invisible"
+                }`}
+              >
+                {phase === "input"
+                  ? `Kalan seçim: ${remainingSelections}`
                   : " "}
-            </p>
+              </p>
+            </div>
 
             <main className="relative min-h-0 w-full flex-1">
               {showBoard ? (

@@ -12,47 +12,47 @@ Her bölüm 10 turdan oluşur (`DEBUG_MODE`'da 4 tur). Son 10 turun ortalaması 
 
 ### Normal Mod Bölümleri (1–16)
 
-| Bölüm | Grid | Kare Sayısı | Gösterim Hızı |
-|-------|------|-------------|---------------|
-| 1 | 6×6 | 3 | Yavaş (700ms) |
-| 2 | 6×6 | 3 | Orta (600ms) |
-| 3 | 6×6 | 3 | Hızlı (500ms) |
-| 4 | 6×6 | 3 | Çok Hızlı (400ms) |
-| 5 | 7×7 | 4 | Yavaş (700ms) |
-| 6 | 7×7 | 4 | Orta (600ms) |
-| 7 | 7×7 | 4 | Hızlı (500ms) |
-| 8 | 7×7 | 4 | Çok Hızlı (400ms) |
-| 9 | 8×8 | 5 | Yavaş (700ms) |
-| 10 | 8×8 | 5 | Orta (600ms) |
-| 11 | 8×8 | 5 | Hızlı (500ms) |
-| 12 | 8×8 | 5 | Çok Hızlı (400ms) |
-| 13 | 8×8 | 6 | Yavaş (700ms) |
-| 14 | 8×8 | 6 | Orta (600ms) |
-| 15 | 8×8 | 6 | Hızlı (500ms) |
-| 16 | 8×8 | 6 | Çok Hızlı (400ms) |
+| Bölüm | Grid | Kare Sayısı | Gösterim Hızı     |
+| ----- | ---- | ----------- | ----------------- |
+| 1     | 6×6  | 3           | Yavaş (700ms)     |
+| 2     | 6×6  | 3           | Orta (600ms)      |
+| 3     | 6×6  | 3           | Hızlı (500ms)     |
+| 4     | 6×6  | 3           | Çok Hızlı (400ms) |
+| 5     | 7×7  | 4           | Yavaş (700ms)     |
+| 6     | 7×7  | 4           | Orta (600ms)      |
+| 7     | 7×7  | 4           | Hızlı (500ms)     |
+| 8     | 7×7  | 4           | Çok Hızlı (400ms) |
+| 9     | 8×8  | 5           | Yavaş (700ms)     |
+| 10    | 8×8  | 5           | Orta (600ms)      |
+| 11    | 8×8  | 5           | Hızlı (500ms)     |
+| 12    | 8×8  | 5           | Çok Hızlı (400ms) |
+| 13    | 8×8  | 6           | Yavaş (700ms)     |
+| 14    | 8×8  | 6           | Orta (600ms)      |
+| 15    | 8×8  | 6           | Hızlı (500ms)     |
+| 16    | 8×8  | 6           | Çok Hızlı (400ms) |
 
 ### Emoji Mod Bölümleri (17–32)
 
 Aynı örüntü tekrar eder. Her turda minimum 1 kedi (🐱), minimum 1 ayı (🐻) gösterilir. Geri kalanlar random. Input fazında kategoriler sırayla sorulur.
 
-| Bölüm | Grid | Kare Sayısı | Gösterim Hızı |
-|-------|------|-------------|---------------|
-| 17 | 6×6 | 3 | Yavaş (700ms) |
-| 18 | 6×6 | 3 | Orta (600ms) |
-| 19 | 6×6 | 3 | Hızlı (500ms) |
-| 20 | 6×6 | 3 | Çok Hızlı (400ms) |
-| 21 | 7×7 | 4 | Yavaş (700ms) |
-| 22 | 7×7 | 4 | Orta (600ms) |
-| 23 | 7×7 | 4 | Hızlı (500ms) |
-| 24 | 7×7 | 4 | Çok Hızlı (400ms) |
-| 25 | 8×8 | 5 | Yavaş (700ms) |
-| 26 | 8×8 | 5 | Orta (600ms) |
-| 27 | 8×8 | 5 | Hızlı (500ms) |
-| 28 | 8×8 | 5 | Çok Hızlı (400ms) |
-| 29 | 8×8 | 6 | Yavaş (700ms) |
-| 30 | 8×8 | 6 | Orta (600ms) |
-| 31 | 8×8 | 6 | Hızlı (500ms) |
-| 32 | 8×8 | 6 | Çok Hızlı (400ms) |
+| Bölüm | Grid | Kare Sayısı | Gösterim Hızı     |
+| ----- | ---- | ----------- | ----------------- |
+| 17    | 6×6  | 3           | Yavaş (700ms)     |
+| 18    | 6×6  | 3           | Orta (600ms)      |
+| 19    | 6×6  | 3           | Hızlı (500ms)     |
+| 20    | 6×6  | 3           | Çok Hızlı (400ms) |
+| 21    | 7×7  | 4           | Yavaş (700ms)     |
+| 22    | 7×7  | 4           | Orta (600ms)      |
+| 23    | 7×7  | 4           | Hızlı (500ms)     |
+| 24    | 7×7  | 4           | Çok Hızlı (400ms) |
+| 25    | 8×8  | 5           | Yavaş (700ms)     |
+| 26    | 8×8  | 5           | Orta (600ms)      |
+| 27    | 8×8  | 5           | Hızlı (500ms)     |
+| 28    | 8×8  | 5           | Çok Hızlı (400ms) |
+| 29    | 8×8  | 6           | Yavaş (700ms)     |
+| 30    | 8×8  | 6           | Orta (600ms)      |
+| 31    | 8×8  | 6           | Hızlı (500ms)     |
+| 32    | 8×8  | 6           | Çok Hızlı (400ms) |
 
 ## Puanlama
 
@@ -94,9 +94,7 @@ Aynı örüntü tekrar eder. Her turda minimum 1 kedi (🐱), minimum 1 ayı (�
 
 ### Primus (Sayı Kategorisi)
 
-Sayı tanıma ve seçim hızı oyunu. Gösterim fazı yoktur; sayılar tur başından itibaren tahtada durur. Sıra önemli değildir. Kullanıcı doğru hücreleri işaretler; tur süre dolunca veya tüm asallar seçilince biter.
-
-Oyuncuya tahtada kaç hedef olduğu gösterilmez.
+Sayı tanıma ve seçim hızı oyunu. Gösterim fazı yoktur; sayılar tur başından itibaren tahtada durur. Sıra önemli değildir. Kullanıcı doğru hücreleri işaretler; tur süre dolunca veya mevcut seçim sayısı asal sayısına ulaşınca biter.
 
 #### Canlı (bölüm 1)
 
@@ -107,7 +105,7 @@ Oyuncuya tahtada kaç hedef olduğu gösterilmez.
 - Tek basamak = 2–9 (0 ve 1 yasak); 2 basamak = 10–99
 - Tek basamaklı hücre: en az 3; üst sınır 3–8 arasında rastgele
 - Hedef olmayan hücreler yalnızca bileşik sayılardır
-- Asal sayısı sabit: 3
+- Asal sayı adedi sabit: 3
 
 **Tur tipi**
 
@@ -121,10 +119,13 @@ Oyuncuya tahtada kaç hedef olduğu gösterilmez.
 
 - Asal hücreye tıklama = doğru seçim
 - Bileşik hücreye tıklama = yanlış seçim (tur fail olmaz)
-- Seçim geri alınamaz; aynı hücreye tekrar tıklama yok sayılır
+- Aynı hücreye tekrar tıklanınca seçim geri alınır (toggle); doğru veya yanlış listeden çıkar
+- Geri alınca `Kalan seçim` artar; tur bitişi o anki (doğru + yanlış) seçim sayısına göre hesaplanır
 - **Bitir** butonu yok
-- Tur süre dolunca veya tüm asallar seçilince otomatik sonlanır
+- Tur sonu (hangisi önce gelirse): süre dolunca; veya mevcut seçim sayısı (doğru + yanlış) === tahtadaki asal sayısı
 - Erken bitişte `elapsedMs` gerçek geçen süre (hız puanı artar)
+- Not: Bölüm 1’de asal sayısı 3 → N = 3 seçim; Bölüm 2–3’te asal 2–6 olunca N de o sayıya eşitlenir
+- Kalan seçim göstergesi (yalnızca input, grid üstünde): `Kalan seçim: N` — N = tahtadaki asal sayısı − (doğru + yanlış seçim); seçimde azalır, geri alınca artar; idle/result’ta görünmez
 
 **Süre**
 
@@ -161,7 +162,7 @@ Oyuncuya tahtada kaç hedef olduğu gösterilmez.
 
 #### Sonraki
 
-- Bölüm 2–3: hâlâ 1+2 basamak; asal sayısı rastgele 2–6
+- Bölüm 2–3: hâlâ 1+2 basamak; asal sayısı rastgele 2–6 (N seçim kuralı da o sayıya eşitlenir)
 - Bölüm 4+: yalnızca 2 basamaklı sayılar
 - Seviye ilerlemesi ve grid büyümesi (4×4 → 5×5 → 6×6 → 7×7) sonra; süre zorlaştıkça +1 sn
 - Tur tipi rotasyonu: asal, Fibonacci, aritmetik dizi, geometrik dizi (tur başına biri)

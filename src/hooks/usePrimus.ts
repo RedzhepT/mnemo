@@ -241,38 +241,49 @@ export function usePrimus(): UsePrimusReturn {
     setPhase("idle");
   }, [levelComplete]);
 
-  // Hücre tıklamasını işler
+  // Hücre tıklamasını işler (seçiliyse geri alır / değilse ekler)
   const handleCellClick = useCallback(
     (index: number): void => {
       if (phaseRef.current !== "input") {
         return;
       }
 
-      if (
-        playerInputRef.current.includes(index) ||
-        wrongInputIndicesRef.current.includes(index)
-      ) {
-        return;
-      }
+      const isAlreadyCorrect = playerInputRef.current.includes(index);
+      const isAlreadyWrong = wrongInputIndicesRef.current.includes(index);
 
-      const isPrimeCell = primeIndicesRef.current.includes(index);
-
-      if (isPrimeCell) {
-        const nextInput = [...playerInputRef.current, index];
+      if (isAlreadyCorrect) {
+        const nextInput = playerInputRef.current.filter(
+          (selectedIndex) => selectedIndex !== index,
+        );
         playerInputRef.current = nextInput;
         setPlayerInput(nextInput);
+      } else if (isAlreadyWrong) {
+        const nextWrong = wrongInputIndicesRef.current.filter(
+          (selectedIndex) => selectedIndex !== index,
+        );
+        wrongInputIndicesRef.current = nextWrong;
+        setWrongInputIndices(nextWrong);
+      } else {
+        const isPrimeCell = primeIndicesRef.current.includes(index);
 
-        // Tüm asallar seçildiyse turu gerçek geçen süreyle bitir
-        if (nextInput.length === primeIndicesRef.current.length) {
-          finishRoundRef.current();
+        if (isPrimeCell) {
+          const nextInput = [...playerInputRef.current, index];
+          playerInputRef.current = nextInput;
+          setPlayerInput(nextInput);
+        } else {
+          const nextWrong = [...wrongInputIndicesRef.current, index];
+          wrongInputIndicesRef.current = nextWrong;
+          setWrongInputIndices(nextWrong);
         }
-
-        return;
       }
 
-      const nextWrong = [...wrongInputIndicesRef.current, index];
-      wrongInputIndicesRef.current = nextWrong;
-      setWrongInputIndices(nextWrong);
+      // Mevcut seçim sayısı === asal sayısı ise turu gerçek elapsedMs ile bitir
+      const currentSelectionCount =
+        playerInputRef.current.length + wrongInputIndicesRef.current.length;
+
+      if (currentSelectionCount === primeIndicesRef.current.length) {
+        finishRoundRef.current();
+      }
     },
     [],
   );

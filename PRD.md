@@ -61,6 +61,14 @@ Aynı örüntü tekrar eder. Her turda minimum 1 kedi (🐱), minimum 1 ayı (�
 - Referans süre üzerinde: **hız = referansSüre / elapsedMs** (logaritmik ceza)
 - **final = (doğruluk × 0.6 + hız × 0.4) × 100**
 
+## Mnemo Input
+
+- Input fazında grid üstünde: `Kalan seçim: N` — yalnızca input fazında
+- Normal mod: N = `sequence.length` − `playerInput.length`
+- Emoji mod: N = aktif kategorideki hedef kare sayısı − o kategoride yapılan tıklama
+- Seçili hücreye tekrar tıklanınca seçim geri alınır (toggle); kalan seçim artar
+- Her iki mod (bölüm 1–32)
+
 ## Teknik Stack
 
 - React + TypeScript + Vite + Tailwind CSS

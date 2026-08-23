@@ -116,6 +116,16 @@ export function MnemoGame() {
   const showEmojiInfo = isEmojiMode && activeCategoryEmojis !== null;
   const showClickPrompt =
     isEmojiMode && phase === "input" && currentInputCategory !== null;
+  const remainingSelections =
+    phase === "input"
+      ? isEmojiMode && currentInputCategory !== null
+        ? Math.max(
+            0,
+            emojiSequence.filter((cell) => cell.emoji === currentInputCategory)
+              .length - playerInput.length,
+          )
+        : Math.max(0, sequence.length - playerInput.length)
+      : 0;
 
   return (
     <>
@@ -220,15 +230,26 @@ export function MnemoGame() {
                   : " "}
               </p>
 
-              <p
-                className={`flex h-10 shrink-0 items-center justify-center text-xl font-semibold text-white sm:text-2xl ${
-                  showClickPrompt ? "visible" : "invisible"
-                }`}
-              >
-                {showClickPrompt && currentInputCategory !== null
-                  ? `Şimdi tıkla: ${EMOJI_MAP[currentInputCategory]}`
-                  : " "}
-              </p>
+              <div className="flex h-14 shrink-0 flex-col items-center justify-center gap-0.5">
+                <p
+                  className={`text-xl font-semibold text-white sm:text-2xl ${
+                    showClickPrompt ? "visible" : "invisible"
+                  }`}
+                >
+                  {showClickPrompt && currentInputCategory !== null
+                    ? `Şimdi tıkla: ${EMOJI_MAP[currentInputCategory]}`
+                    : " "}
+                </p>
+                <p
+                  className={`text-sm text-mnemo-hud ${
+                    phase === "input" ? "visible" : "invisible"
+                  }`}
+                >
+                  {phase === "input"
+                    ? `Kalan seçim: ${remainingSelections}`
+                    : " "}
+                </p>
+              </div>
 
               <main className="relative min-h-0 w-full flex-1">
                 <div className="absolute inset-0 m-auto aspect-square max-h-full max-w-full">

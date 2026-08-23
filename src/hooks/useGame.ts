@@ -672,6 +672,35 @@ export function useGame(): UseGameReturn {
         return null;
       }
 
+      if (previousCategoryInput.includes(index)) {
+        const nextPlayerInput = previousCategoryInput.filter(
+          (selectedIndex) => selectedIndex !== index,
+        );
+        categoryProgressRef.current = Math.max(
+          0,
+          categoryProgressRef.current - 1,
+        );
+
+        const nextAllPlayerInputs = [...allPlayerInputsRef.current];
+        const removeIndex = nextAllPlayerInputs.lastIndexOf(index);
+
+        if (removeIndex >= 0) {
+          nextAllPlayerInputs.splice(removeIndex, 1);
+        }
+
+        return {
+          playerInput: nextPlayerInput,
+          allPlayerInputs: nextAllPlayerInputs,
+          correctPlayerInputs: correctPlayerInputsRef.current.filter(
+            (selectedIndex) => selectedIndex !== index,
+          ),
+          wrongInputIndices: wrongInputIndicesRef.current.filter(
+            (selectedIndex) => selectedIndex !== index,
+          ),
+          shouldComplete: false,
+        };
+      }
+
       const nextAllPlayerInputs = [...allPlayerInputsRef.current, index];
       const cell = emojiSequenceRef.current.find(
         (item) => item.index === index,
@@ -782,7 +811,16 @@ export function useGame(): UseGameReturn {
       }
 
       setPlayerInput((previousInput) => {
+        if (previousInput.includes(index)) {
+          const nextPlayerInput = previousInput.filter(
+            (selectedIndex) => selectedIndex !== index,
+          );
+          playerInputRef.current = nextPlayerInput;
+          return nextPlayerInput;
+        }
+
         const nextPlayerInput = [...previousInput, index];
+        playerInputRef.current = nextPlayerInput;
 
         if (nextPlayerInput.length < sequenceRef.current.length) {
           return nextPlayerInput;

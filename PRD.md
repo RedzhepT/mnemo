@@ -102,38 +102,47 @@ Aynı örüntü tekrar eder. Her turda minimum 1 kedi (🐱), minimum 1 ayı (�
 
 ### Primus (Sayı Kategorisi)
 
-Sayı tanıma ve seçim hızı oyunu. Gösterim fazı yoktur; sayılar tur başından itibaren tahtada durur. Sıra önemli değildir. Kullanıcı doğru hücreleri işaretler; tur süre dolunca veya mevcut seçim sayısı asal sayısına ulaşınca biter.
+Primus karma mod — tur başına **asal** veya **kare/küp** hedefi. Gösterim fazı yoktur; sayılar tur başından itibaren tahtada durur. Sıra önemli değildir. Kullanıcı doğru hücreleri işaretler; tur süre dolunca veya mevcut seçim sayısı hedef sayısına ulaşınca biter.
 
-#### Canlı (bölüm 1)
-
-**Tahta**
-
-- 4×4 grid (16 hücre), tek seviye
-- 1 ve 2 basamaklı sayılar karışık; tekrarsız
-- Tek basamak = 2–9 (0 ve 1 yasak); 2 basamak = 10–99
-- Tek basamaklı hücre: en az 3; üst sınır 3–8 arasında rastgele
-- Hedef olmayan hücreler yalnızca bileşik sayılardır
-- Asal sayı adedi sabit: 3
+#### Canlı (bölüm 1, tek seviye — seviye geçişi hâlâ Sonraki)
 
 **Tur tipi**
 
-- Her tur görevi: asal sayıları bul
+- Tur başına rastgele: `asal` veya `kareKup`
+- Son 5 turda her iki tip en az bir kez gelmeli (garanti)
+- Input fazında görev metni tipe göre: "Asal sayıları bul" / "Kare ve küpleri bul"
+
+**Tahta (ortak)**
+
+- 4×4, 1+2 basamak (2–9 / 10–99), tekrarsız, 0 ve 1 yasak
+- Min 3 tek basamak (üst 3–8 rastgele)
+- Hedef sayısı sabit: 3
+
+**Asal turu**
+
+- Hedef: asallar (3 adet)
+- Hedef dışı: yalnızca bileşik
+
+**Kare/küp turu**
+
+- Hedef: tam sayı kareleri ve küpleri karışık (ör. 4, 9, 8, 27, 16); tahtada hem kare hem küp olabilir
+- Hem kare hem küp olan sayı (ör. 64) tek hedef sayılır
+- Hedef dışı: kare/küp olmayan her sayı (asal dahil — tıklanınca yanlış)
+- 1 yasak
 
 **Fazlar**
 
 - `idle` → `input` → `result` (`showing` yok)
 
-**Input**
+**Input (ortak — mevcut kurallar korunur)**
 
-- Asal hücreye tıklama = doğru seçim
-- Bileşik hücreye tıklama = yanlış seçim (tur fail olmaz)
+- Hedef hücreye tıklama = doğru seçim; hedef dışına tıklama = yanlış (tur fail olmaz)
 - Aynı hücreye tekrar tıklanınca seçim geri alınır (toggle); doğru veya yanlış listeden çıkar
 - Geri alınca `Kalan seçim` artar; tur bitişi o anki (doğru + yanlış) seçim sayısına göre hesaplanır
 - **Bitir** butonu yok
-- Tur sonu (hangisi önce gelirse): süre dolunca; veya mevcut seçim sayısı (doğru + yanlış) === tahtadaki asal sayısı
+- Tur sonu (hangisi önce gelirse): süre dolunca; veya mevcut seçim sayısı (doğru + yanlış) === hedef sayısı (3)
 - Erken bitişte `elapsedMs` gerçek geçen süre (hız puanı artar)
-- Not: Bölüm 1’de asal sayısı 3 → N = 3 seçim; Bölüm 2–3’te asal 2–6 olunca N de o sayıya eşitlenir
-- Kalan seçim göstergesi (yalnızca input, grid üstünde): `Kalan seçim: N` — N = tahtadaki asal sayısı − (doğru + yanlış seçim); seçimde azalır, geri alınca artar; idle/result’ta görünmez
+- Kalan seçim göstergesi (yalnızca input, grid üstünde): `Kalan seçim: N` — N = hedef sayısı − (doğru + yanlış seçim); seçimde azalır, geri alınca artar; idle/result’ta görünmez
 
 **Süre**
 
@@ -143,16 +152,21 @@ Sayı tanıma ve seçim hızı oyunu. Gösterim fazı yoktur; sayılar tur baş�
 **Renklendirme**
 
 - Input: seçilen hücreler sarı
-- Result: doğru asallar yeşil, yanlış tıklanan bileşikler kırmızı, bulunmayan asallar mavi
-- Result’ta grid üstünde tüm asallar küçükten büyüğe düz liste (ör. `Asallar: 2, 3, 11`)
+- Result: doğru hedefler yeşil, yanlış tıklanan hücreler kırmızı, bulunmayan hedefler mavi
 - Turuncu (`wrong-order`) kullanılmaz
+
+**Result**
+
+- Grid üstünde `Hedefler:` — küçükten büyüğe
+- Kare/küp formatı: üslü gösterim (ör. `2² = 4`, `3³ = 27`); asal turunda düz sayı listesi
+- Renklendirme aynı (yeşil/kırmızı/mavi)
 
 **Puanlama**
 
 - `calculateScore(correctCount, totalCount, elapsedMs)` — Mnemo ile aynı fonksiyon
-- `correctCount` = doğru seçilen asal sayısı
-- `totalCount` = tahtadaki asal sayısı + yanlış tıklama sayısı
-- Örnek: 3 asal, 2 doğru, 1 yanlış tık → doğruluk = 2 / 4
+- `correctCount` = doğru seçilen hedef sayısı
+- `totalCount` = hedef sayısı + yanlış tıklama sayısı (tipe göre)
+- Örnek: 3 hedef, 2 doğru, 1 yanlış tık → doğruluk = 2 / 4
 - Hız ve ağırlıklar Mnemo ile aynı: `(doğruluk × 0.6 + hız × 0.4) × 100`
 
 **İlerleme**
@@ -170,12 +184,8 @@ Sayı tanıma ve seçim hızı oyunu. Gösterim fazı yoktur; sayılar tur baş�
 
 #### Sonraki
 
-- Bölüm 2–3: hâlâ 1+2 basamak; asal sayısı rastgele 2–6 (N seçim kuralı da o sayıya eşitlenir)
-- Bölüm 4+: yalnızca 2 basamaklı sayılar
-- Seviye ilerlemesi ve grid büyümesi (4×4 → 5×5 → 6×6 → 7×7) sonra; süre zorlaştıkça +1 sn
-- Tur tipi rotasyonu: asal, Fibonacci, aritmetik dizi, geometrik dizi (tur başına biri)
-- Perfect sayılar **iptal**
-- İleri seviyelerde 3 basamaklı sayılar
+- Bölüm 2–3, grid büyümesi, seviye geçişi (önce kare/küp Canlı’da otursun)
+- Fibonacci, aritmetik, geometrik diziler
 - Euclid / Omnemo kartları Home’da yok (ayrı kategoriler)
 
 ### Euclid (Geometri Kategorisi)

@@ -7,7 +7,11 @@ import {
   PRIMUS_ROUND_TIME_MS,
   PRIMUS_SAVE_KEY,
 } from "../utils/constants";
-import { generateBoard } from "../utils/primus/numbers";
+import {
+  generateBoard,
+  pickRoundType,
+  type PrimusRoundType,
+} from "../utils/primus/numbers";
 import { calculateScore } from "../utils/scoring";
 
 export type PrimusPhase = "idle" | "input" | "result";
@@ -26,7 +30,8 @@ interface PrimusSave {
 export interface UsePrimusReturn {
   phase: PrimusPhase;
   board: number[];
-  primeIndices: number[];
+  targetIndices: number[];
+  roundType: PrimusRoundType;
   playerInput: number[];
   wrongInputIndices: number[];
   resultMap: PrimusResultMap;
@@ -84,7 +89,8 @@ function readSavedGame(): PrimusSave | null {
 export function usePrimus(): UsePrimusReturn {
   const [phase, setPhase] = useState<PrimusPhase>("idle");
   const [board, setBoard] = useState<number[]>([]);
-  const [primeIndices, setPrimeIndices] = useState<number[]>([]);
+  const [targetIndices, setTargetIndices] = useState<number[]>([]);
+  const [roundType, setRoundType] = useState<PrimusRoundType>("asal");
   const [playerInput, setPlayerInput] = useState<number[]>([]);
   const [wrongInputIndices, setWrongInputIndices] = useState<number[]>([]);
   const [resultMap, setResultMap] = useState<PrimusResultMap>({});
@@ -98,18 +104,19 @@ export function usePrimus(): UsePrimusReturn {
 
   const phaseRef = useRef<PrimusPhase>("idle");
   const boardRef = useRef<number[]>([]);
-  const primeIndicesRef = useRef<number[]>([]);
+  const targetIndicesRef = useRef<number[]>([]);
   const playerInputRef = useRef<number[]>([]);
   const wrongInputIndicesRef = useRef<number[]>([]);
   const roundHistoryRef = useRef<number[]>([]);
   const roundCountRef = useRef(0);
+  const recentRoundTypesRef = useRef<PrimusRoundType[]>([]);
   const inputStartedAtRef = useRef(0);
   const timerRef = useRef<number | null>(null);
   const finishRoundRef = useRef<() => void>(() => {});
 
   phaseRef.current = phase;
   boardRef.current = board;
-  primeIndicesRef.current = primeIndices;
+  targetIndicesRef.current = targetIndices;
   playerInputRef.current = playerInput;
   wrongInputIndicesRef.current = wrongInputIndices;
   roundHistoryRef.current = roundHistory;
@@ -138,7 +145,7 @@ export function usePrimus(): UsePrimusReturn {
       nextResultMap[index] = "wrong";
     }
 
-    for (const index of primeIndicesRef.current) {
+    for (const index of targetIndicesRef.current) {
       if (!selectedSet.has(index)) {
         nextResultMap[index] = "missed";
       }
@@ -158,7 +165,7 @@ export function usePrimus(): UsePrimusReturn {
     const elapsed = Date.now() - inputStartedAtRef.current;
     const correctCount = playerInputRef.current.length;
     const wrongCount = wrongInputIndicesRef.current.length;
-    const totalCount = primeIndicesRef.current.length + wrongCount;
+    const totalCount = targetIndicesRef.current.length + wrongCount;
     const nextScore =
       totalCount > 0
         ? calculateScore(correctCount, totalCount, elapsed)
@@ -210,19 +217,26 @@ export function usePrimus(): UsePrimusReturn {
     }, 50);
   }, [stopTimer]);
 
-  // Yeni tur başlatır: tahta üretir ve input fazına geçer
+  // Yeni tur başlatır: tur tipi seçer, tahta üretir ve input fazına geçer
   const startRound = useCallback((): void => {
     stopTimer();
 
-    const generatedBoard = generateBoard();
+    const nextRoundType = pickRoundType(recentRoundTypesRef.current);
+    const generatedBoard = generateBoard(nextRoundType);
+
+    recentRoundTypesRef.current = [
+      ...recentRoundTypesRef.current,
+      nextRoundType,
+    ];
 
     boardRef.current = generatedBoard.values;
-    primeIndicesRef.current = generatedBoard.primeIndices;
+    targetIndicesRef.current = generatedBoard.targetIndices;
     playerInputRef.current = [];
     wrongInputIndicesRef.current = [];
 
     setBoard(generatedBoard.values);
-    setPrimeIndices(generatedBoard.primeIndices);
+    setTargetIndices(generatedBoard.targetIndices);
+    setRoundType(generatedBoard.roundType);
     setPlayerInput([]);
     setWrongInputIndices([]);
     setResultMap({});
@@ -264,9 +278,9 @@ export function usePrimus(): UsePrimusReturn {
         wrongInputIndicesRef.current = nextWrong;
         setWrongInputIndices(nextWrong);
       } else {
-        const isPrimeCell = primeIndicesRef.current.includes(index);
+        const isTargetCell = targetIndicesRef.current.includes(index);
 
-        if (isPrimeCell) {
+        if (isTargetCell) {
           const nextInput = [...playerInputRef.current, index];
           playerInputRef.current = nextInput;
           setPlayerInput(nextInput);
@@ -277,11 +291,10 @@ export function usePrimus(): UsePrimusReturn {
         }
       }
 
-      // Mevcut seçim sayısı === asal sayısı ise turu gerçek elapsedMs ile bitir
       const currentSelectionCount =
         playerInputRef.current.length + wrongInputIndicesRef.current.length;
 
-      if (currentSelectionCount === primeIndicesRef.current.length) {
+      if (currentSelectionCount === targetIndicesRef.current.length) {
         finishRoundRef.current();
       }
     },
@@ -313,7 +326,8 @@ export function usePrimus(): UsePrimusReturn {
   return {
     phase,
     board,
-    primeIndices,
+    targetIndices,
+    roundType,
     playerInput,
     wrongInputIndices,
     resultMap,

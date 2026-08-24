@@ -4,19 +4,23 @@ import {
   PRIMUS_MIN_ONE_DIGIT_COUNT,
   PRIMUS_ONE_DIGIT_MAX,
   PRIMUS_ONE_DIGIT_MIN,
-  PRIMUS_PRIME_COUNT,
+  PRIMUS_ROUND_TYPE_WINDOW,
+  PRIMUS_TARGET_COUNT,
   PRIMUS_TWO_DIGIT_MAX,
   PRIMUS_TWO_DIGIT_MIN,
 } from "../constants";
 
+export type PrimusRoundType = "asal" | "kareKup";
+
 export interface PrimusBoard {
   values: number[];
-  primeIndices: number[];
+  targetIndices: number[];
+  roundType: PrimusRoundType;
 }
 
 export interface GenerateBoardConfig {
   cellCount?: number;
-  primeCount?: number;
+  targetCount?: number;
 }
 
 // Sayının asal olup olmadığını kontrol eder
@@ -40,6 +44,31 @@ export function isPrime(n: number): boolean {
   }
 
   return true;
+}
+
+// Sayının tam kare olup olmadığını kontrol eder (1 hariç)
+export function isPerfectSquare(n: number): boolean {
+  if (n < 2) {
+    return false;
+  }
+
+  const root = Math.sqrt(n);
+  return Number.isInteger(root);
+}
+
+// Sayının tam küp olup olmadığını kontrol eder (1 hariç)
+export function isPerfectCube(n: number): boolean {
+  if (n < 2) {
+    return false;
+  }
+
+  const root = Math.round(Math.pow(n, 1 / 3));
+  return root ** 3 === n;
+}
+
+// Kare veya küp hedefi olup olmadığını kontrol eder
+export function isSquareOrCube(n: number): boolean {
+  return isPerfectSquare(n) || isPerfectCube(n);
 }
 
 // 2–9 arası asal sayıları döner
@@ -95,6 +124,48 @@ export function generateTwoDigitComposites(exclude: number[]): number[] {
   return composites;
 }
 
+// Aralıktaki kare/küp sayılarını döner (1 hariç)
+function getSquareOrCubeNumbers(
+  min: number,
+  max: number,
+): number[] {
+  const values: number[] = [];
+
+  for (let value = min; value <= max; value += 1) {
+    if (value === 1) {
+      continue;
+    }
+
+    if (isSquareOrCube(value)) {
+      values.push(value);
+    }
+  }
+
+  return values;
+}
+
+// Aralıktaki kare/küp olmayan sayıları döner (1 hariç)
+function getNonSquareCubeNumbers(
+  min: number,
+  max: number,
+  exclude: number[] = [],
+): number[] {
+  const excludeSet = new Set(exclude);
+  const values: number[] = [];
+
+  for (let value = min; value <= max; value += 1) {
+    if (value === 1 || excludeSet.has(value)) {
+      continue;
+    }
+
+    if (!isSquareOrCube(value)) {
+      values.push(value);
+    }
+  }
+
+  return values;
+}
+
 // Diziyi Fisher-Yates ile karıştırır
 function shuffleArray<T>(items: T[]): T[] {
   const shuffled = [...items];
@@ -117,17 +188,70 @@ function pickOneDigitCount(): number {
   const oneDigitComposites = generateOneDigitComposites().length;
   const maxFeasible = Math.min(
     PRIMUS_MAX_ONE_DIGIT_COUNT,
-    PRIMUS_PRIME_COUNT + oneDigitComposites,
+    PRIMUS_TARGET_COUNT + oneDigitComposites,
   );
   const minCount = PRIMUS_MIN_ONE_DIGIT_COUNT;
 
   return minCount + Math.floor(Math.random() * (maxFeasible - minCount + 1));
 }
 
-// Primus tahtası için benzersiz 1+2 basamaklı sayılar ve sabit asal üretir
-export function generateBoard(config?: GenerateBoardConfig): PrimusBoard {
+// Son turlara göre tur tipini seçer (son 5 turda her iki tip garantili)
+export function pickRoundType(recentTypes: PrimusRoundType[]): PrimusRoundType {
+  const window = recentTypes.slice(-PRIMUS_ROUND_TYPE_WINDOW);
+
+  if (window.length < PRIMUS_ROUND_TYPE_WINDOW) {
+    return Math.random() < 0.5 ? "asal" : "kareKup";
+  }
+
+  const hasAsal = window.some((type) => type === "asal");
+  const hasKareKup = window.some((type) => type === "kareKup");
+
+  if (!hasAsal) {
+    return "asal";
+  }
+
+  if (!hasKareKup) {
+    return "kareKup";
+  }
+
+  return Math.random() < 0.5 ? "asal" : "kareKup";
+}
+
+// Kare/küp hedefini üslü gösterimle formatlar
+export function formatSquareCubeTarget(value: number): string {
+  const cubeRoot = Math.round(Math.pow(value, 1 / 3));
+
+  if (cubeRoot ** 3 === value) {
+    return `${cubeRoot}³ = ${value}`;
+  }
+
+  const squareRoot = Math.sqrt(value);
+  return `${squareRoot}² = ${value}`;
+}
+
+// Tur tipine göre hedef listesini result metni için formatlar
+export function formatTargetsLabel(
+  values: number[],
+  roundType: PrimusRoundType,
+): string {
+  const sortedValues = [...values].sort((a, b) => a - b);
+
+  if (sortedValues.length === 0) {
+    return " ";
+  }
+
+  const formattedValues =
+    roundType === "asal"
+      ? sortedValues.map(String)
+      : sortedValues.map(formatSquareCubeTarget);
+
+  return `Hedefler: ${formattedValues.join(", ")}`;
+}
+
+// Asal turu tahtası üretir
+function generatePrimeBoard(config?: GenerateBoardConfig): PrimusBoard {
   const cellCount = config?.cellCount ?? PRIMUS_CELL_COUNT;
-  const primeCount = config?.primeCount ?? PRIMUS_PRIME_COUNT;
+  const targetCount = config?.targetCount ?? PRIMUS_TARGET_COUNT;
   const oneDigitCount = pickOneDigitCount();
   const twoDigitCount = cellCount - oneDigitCount;
   const oneDigitCompositesPool = generateOneDigitComposites();
@@ -135,17 +259,17 @@ export function generateBoard(config?: GenerateBoardConfig): PrimusBoard {
   const minOneDigitPrimes = Math.max(
     0,
     oneDigitCount - oneDigitCompositesPool.length,
-    primeCount - twoDigitCount,
+    targetCount - twoDigitCount,
   );
   const maxOneDigitPrimes = Math.min(
-    primeCount,
+    targetCount,
     oneDigitCount,
     generateOneDigitPrimes().length,
   );
   const oneDigitPrimeCount =
     minOneDigitPrimes +
     Math.floor(Math.random() * (maxOneDigitPrimes - minOneDigitPrimes + 1));
-  const twoDigitPrimeCount = primeCount - oneDigitPrimeCount;
+  const twoDigitPrimeCount = targetCount - oneDigitPrimeCount;
 
   const selectedOneDigitPrimes = pickRandomItems(
     generateOneDigitPrimes(),
@@ -155,7 +279,7 @@ export function generateBoard(config?: GenerateBoardConfig): PrimusBoard {
     generateTwoDigitPrimes(),
     twoDigitPrimeCount,
   );
-  const selectedPrimes = [...selectedOneDigitPrimes, ...selectedTwoDigitPrimes];
+  const selectedTargets = [...selectedOneDigitPrimes, ...selectedTwoDigitPrimes];
 
   const oneDigitCompositeCount = oneDigitCount - oneDigitPrimeCount;
   const selectedOneDigitComposites = pickRandomItems(
@@ -170,13 +294,105 @@ export function generateBoard(config?: GenerateBoardConfig): PrimusBoard {
   );
 
   const values = shuffleArray([
-    ...selectedPrimes,
+    ...selectedTargets,
     ...selectedOneDigitComposites,
     ...selectedTwoDigitComposites,
   ]);
-  const primeIndices = values
+  const targetIndices = values
     .map((value, index) => (isPrime(value) ? index : -1))
     .filter((index) => index >= 0);
 
-  return { values, primeIndices };
+  return { values, targetIndices, roundType: "asal" };
+}
+
+// Kare/küp turu tahtası üretir
+function generateSquareCubeBoard(config?: GenerateBoardConfig): PrimusBoard {
+  const cellCount = config?.cellCount ?? PRIMUS_CELL_COUNT;
+  const targetCount = config?.targetCount ?? PRIMUS_TARGET_COUNT;
+  const oneDigitCount = pickOneDigitCount();
+  const twoDigitCount = cellCount - oneDigitCount;
+
+  const oneDigitTargetsPool = getSquareOrCubeNumbers(
+    PRIMUS_ONE_DIGIT_MIN,
+    PRIMUS_ONE_DIGIT_MAX,
+  );
+  const twoDigitTargetsPool = getSquareOrCubeNumbers(
+    PRIMUS_TWO_DIGIT_MIN,
+    PRIMUS_TWO_DIGIT_MAX,
+  );
+  const oneDigitFillersPool = getNonSquareCubeNumbers(
+    PRIMUS_ONE_DIGIT_MIN,
+    PRIMUS_ONE_DIGIT_MAX,
+  );
+
+  const minOneDigitTargets = Math.max(
+    0,
+    oneDigitCount - oneDigitFillersPool.length,
+    targetCount - twoDigitTargetsPool.length,
+  );
+  const maxOneDigitTargets = Math.min(
+    targetCount,
+    oneDigitCount,
+    oneDigitTargetsPool.length,
+  );
+  const oneDigitTargetCount =
+    minOneDigitTargets +
+    Math.floor(Math.random() * (maxOneDigitTargets - minOneDigitTargets + 1));
+  const twoDigitTargetCount = targetCount - oneDigitTargetCount;
+
+  const selectedOneDigitTargets = pickRandomItems(
+    oneDigitTargetsPool,
+    oneDigitTargetCount,
+  );
+  const selectedTwoDigitTargets = pickRandomItems(
+    twoDigitTargetsPool,
+    twoDigitTargetCount,
+  );
+  const selectedTargets = [...selectedOneDigitTargets, ...selectedTwoDigitTargets];
+
+  const oneDigitFillerCount = oneDigitCount - oneDigitTargetCount;
+  const selectedOneDigitFillers = pickRandomItems(
+    oneDigitFillersPool.filter((value) => !selectedTargets.includes(value)),
+    oneDigitFillerCount,
+  );
+
+  const twoDigitFillerCount = twoDigitCount - twoDigitTargetCount;
+  const selectedTwoDigitFillers = pickRandomItems(
+    getNonSquareCubeNumbers(
+      PRIMUS_TWO_DIGIT_MIN,
+      PRIMUS_TWO_DIGIT_MAX,
+      selectedTargets,
+    ),
+    twoDigitFillerCount,
+  );
+
+  const values = shuffleArray([
+    ...selectedTargets,
+    ...selectedOneDigitFillers,
+    ...selectedTwoDigitFillers,
+  ]);
+  const targetIndices = values
+    .map((value, index) => (isSquareOrCube(value) ? index : -1))
+    .filter((index) => index >= 0);
+
+  return { values, targetIndices, roundType: "kareKup" };
+}
+
+// Tur tipine göre Primus tahtası üretir
+export function generateBoard(
+  roundType: PrimusRoundType,
+  config?: GenerateBoardConfig,
+): PrimusBoard {
+  if (roundType === "kareKup") {
+    return generateSquareCubeBoard(config);
+  }
+
+  return generatePrimeBoard(config);
+}
+
+// Input fazı görev metnini tur tipine göre döner
+export function getRoundTaskLabel(roundType: PrimusRoundType): string {
+  return roundType === "asal"
+    ? "Asal sayıları bul"
+    : "Kare ve küpleri bul";
 }

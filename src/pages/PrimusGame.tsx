@@ -2,6 +2,10 @@ import { Link } from "react-router-dom";
 import { PrimusGrid } from "../components/primus/PrimusGrid";
 import { usePrimus } from "../hooks/usePrimus";
 import { MIN_ROUNDS_TO_COMPLETE } from "../utils/constants";
+import {
+  formatTargetsLabel,
+  getRoundTaskLabel,
+} from "../utils/primus/numbers";
 
 const buttonClassName =
   "rounded-[6px] bg-mnemo-primary px-8 py-3 font-medium text-white transition-colors hover:bg-mnemo-primary-hover active:scale-95";
@@ -30,7 +34,8 @@ export function PrimusGame() {
   const {
     phase,
     board,
-    primeIndices,
+    targetIndices,
+    roundType,
     playerInput,
     wrongInputIndices,
     resultMap,
@@ -49,13 +54,13 @@ export function PrimusGame() {
   const showBoard = board.length > 0;
   const remainingSelections = Math.max(
     0,
-    primeIndices.length - (playerInput.length + wrongInputIndices.length),
+    targetIndices.length - (playerInput.length + wrongInputIndices.length),
   );
-  const sortedPrimes = primeIndices
+  const targetValues = targetIndices
     .map((index) => board[index])
     .sort((a, b) => a - b);
-  const primesLabel =
-    sortedPrimes.length > 0 ? `Asallar: ${sortedPrimes.join(", ")}` : " ";
+  const targetsLabel = formatTargetsLabel(targetValues, roundType);
+  const taskLabel = getRoundTaskLabel(roundType);
 
   return (
     <div className="flex h-svh min-h-0 flex-col overflow-hidden bg-mnemo-bg">
@@ -95,14 +100,14 @@ export function PrimusGame() {
           <div className="mx-auto flex h-full min-h-0 w-full max-w-lg flex-col">
             <div className="flex h-14 shrink-0 flex-col items-center justify-center gap-0.5">
               <p
-                className={`text-lg font-semibold text-white sm:text-xl ${
+                className={`text-center text-lg font-semibold text-white sm:text-xl ${
                   phase === "input" || phase === "result" ? "visible" : "invisible"
                 }`}
               >
                 {phase === "input"
-                  ? "Asal sayıları bul"
+                  ? taskLabel
                   : phase === "result"
-                    ? primesLabel
+                    ? targetsLabel
                     : " "}
               </p>
               <p

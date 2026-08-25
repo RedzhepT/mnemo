@@ -246,14 +246,14 @@ export function usePrimus(): UsePrimusReturn {
     startTimer();
   }, [startTimer, stopTimer]);
 
-  // Result fazından sonraki tura geçer
+  // Result fazından doğrudan yeni tur başlatır (idle'a düşmez)
   const nextRound = useCallback((): void => {
     if (phaseRef.current !== "result" || levelComplete) {
       return;
     }
 
-    setPhase("idle");
-  }, [levelComplete]);
+    startRound();
+  }, [levelComplete, startRound]);
 
   // Hücre tıklamasını işler (seçiliyse geri alır / değilse ekler)
   const handleCellClick = useCallback(

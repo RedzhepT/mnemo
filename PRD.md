@@ -132,7 +132,8 @@ Primus karma mod — tur başına **asal** veya **kare/küp** hedefi. Gösterim 
 
 **Fazlar**
 
-- `idle` → `input` → `result` (`showing` yok)
+- İlk tur: `idle` → `input` → `result` (`showing` yok)
+- Sonraki turlar: `result` → “Sonraki Tur” → doğrudan `input` (`idle`’a düşmez)
 
 **Input (ortak — mevcut kurallar korunur)**
 
@@ -147,7 +148,8 @@ Primus karma mod — tur başına **asal** veya **kare/küp** hedefi. Gösterim 
 **Süre**
 
 - 8 saniye (`PRIMUS_ROUND_TIME_MS = 8000`)
-- “Başla” ile tur ve süre başlar
+- İlk tur: idle’da “Başla” ile tur ve süre başlar
+- Result’ta “Sonraki Tur” doğrudan yeni tahta + timer başlatır (idle’a dönmez); `levelComplete` iken no-op
 
 **Renklendirme**
 

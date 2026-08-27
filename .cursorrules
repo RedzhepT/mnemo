@@ -27,6 +27,8 @@ src/
     primus/
       PrimusGrid.tsx      → Primus tahtası
       PrimusCell.tsx      → Primus tek hücre
+      PrimusHelpModal.tsx → Primus yardım (? butonu + modal)
+      PrimusOnboarding.tsx → ilk /primus tanıtımı
   hooks/
     useGame.ts            → Mnemo oyun state
     usePrimus.ts          → Primus oyun state

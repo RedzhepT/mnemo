@@ -1,5 +1,14 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { PrimusGrid } from "../components/primus/PrimusGrid";
+import {
+  PrimusHelpButton,
+  PrimusHelpModal,
+} from "../components/primus/PrimusHelpModal";
+import {
+  PrimusOnboarding,
+  PRIMUS_ONBOARDING_SEEN_KEY,
+} from "../components/primus/PrimusOnboarding";
 import { usePrimus } from "../hooks/usePrimus";
 import { MIN_ROUNDS_TO_COMPLETE } from "../utils/constants";
 import {
@@ -29,6 +38,11 @@ function formatRemainingSeconds(remainingMs: number): string {
   return (remainingMs / 1000).toFixed(1);
 }
 
+// localStorage'da Primus onboarding görülüp görülmediğini okur
+function readPrimusOnboardingSeen(): boolean {
+  return localStorage.getItem(PRIMUS_ONBOARDING_SEEN_KEY) === "true";
+}
+
 // Primus oyun ekranını render eder
 export function PrimusGame() {
   const {
@@ -49,6 +63,11 @@ export function PrimusGame() {
     nextRound,
   } = usePrimus();
 
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => !readPrimusOnboardingSeen(),
+  );
+
   const roundAverage = calculateRoundAverage(roundHistory);
   const formattedAverage = roundAverage.toFixed(1);
   const showBoard = board.length > 0;
@@ -63,105 +82,119 @@ export function PrimusGame() {
   const taskLabel = getRoundTaskLabel(roundType);
 
   return (
-    <div className="flex h-svh min-h-0 flex-col overflow-hidden bg-mnemo-bg">
-      <header className="mnemo-hud shrink-0 px-4 py-3">
-        <div className="mx-auto flex w-full max-w-lg items-center justify-between overflow-x-auto gap-1.5 text-xs font-medium text-mnemo-hud sm:gap-3 sm:text-sm">
-          <div className="flex items-center gap-1.5 sm:gap-3">
-            <span className="whitespace-nowrap">Bölüm: {level}</span>
-            <span className="whitespace-nowrap">Ort: %{formattedAverage}</span>
-            <span className="whitespace-nowrap">Puan: %{score.toFixed(1)}</span>
-          </div>
-          <Link
-            to="/"
-            className="whitespace-nowrap rounded-[6px] border border-mnemo-border px-2 py-1 text-xs text-mnemo-hud transition-colors hover:bg-mnemo-cell-hover hover:text-white"
-          >
-            Ana Sayfa
-          </Link>
-        </div>
-      </header>
+    <>
+      <PrimusHelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-3">
-        {levelComplete ? (
-          <section className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-6 rounded-[6px] border border-mnemo-border bg-mnemo-cell px-6 py-8 text-center">
-            <h2 className="text-2xl font-semibold text-mnemo-primary-hover">
-              Bölüm Tamamlandı!
-            </h2>
-            <p className="text-mnemo-hud">
-              Son {MIN_ROUNDS_TO_COMPLETE} tur ortalaması: %{formattedAverage}
-            </p>
-            <p className="text-sm text-mnemo-hud">
-              Primus şu an tek seviyeli — yeni seviyeler yakında eklenecek.
-            </p>
-            <Link to="/" className={secondaryButtonClassName}>
-              Ana Sayfaya Dön
-            </Link>
-          </section>
-        ) : (
-          <div className="mx-auto flex h-full min-h-0 w-full max-w-lg flex-col">
-            <div className="flex h-14 shrink-0 flex-col items-center justify-center gap-0.5">
-              <p
-                className={`text-center text-lg font-semibold text-white sm:text-xl ${
-                  phase === "input" || phase === "result" ? "visible" : "invisible"
-                }`}
-              >
-                {phase === "input"
-                  ? taskLabel
-                  : phase === "result"
-                    ? targetsLabel
-                    : " "}
-              </p>
-              <p
-                className={`text-sm text-mnemo-hud ${
-                  phase === "input" ? "visible" : "invisible"
-                }`}
-              >
-                {phase === "input"
-                  ? `Kalan seçim: ${remainingSelections}`
-                  : " "}
-              </p>
+      {showOnboarding && (
+        <PrimusOnboarding onComplete={() => setShowOnboarding(false)} />
+      )}
+
+      <div className="flex h-svh min-h-0 flex-col overflow-hidden bg-mnemo-bg">
+        <header className="mnemo-hud shrink-0 px-4 py-3">
+          <div className="mx-auto flex w-full max-w-lg items-center justify-between overflow-x-auto gap-1.5 text-xs font-medium text-mnemo-hud sm:gap-3 sm:text-sm">
+            <div className="flex items-center gap-1.5 sm:gap-3">
+              <span className="whitespace-nowrap">Bölüm: {level}</span>
+              <span className="whitespace-nowrap">Ort: %{formattedAverage}</span>
+              <span className="whitespace-nowrap">Puan: %{score.toFixed(1)}</span>
             </div>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <PrimusHelpButton
+                isOpen={helpOpen}
+                onClick={() => setHelpOpen((previous) => !previous)}
+              />
+              <Link
+                to="/"
+                className="whitespace-nowrap rounded-[6px] border border-mnemo-border px-2 py-1 text-xs text-mnemo-hud transition-colors hover:bg-mnemo-cell-hover hover:text-white"
+              >
+                Ana Sayfa
+              </Link>
+            </div>
+          </div>
+        </header>
 
-            <main className="relative min-h-0 w-full flex-1">
-              {showBoard ? (
-                <div className="absolute inset-0 m-auto aspect-square max-h-full max-w-full">
-                  <PrimusGrid
-                    board={board}
-                    phase={phase}
-                    playerInput={playerInput}
-                    wrongInputIndices={wrongInputIndices}
-                    resultMap={resultMap}
-                    onCellClick={handleCellClick}
-                  />
-                </div>
-              ) : (
-                <div className="flex h-full items-center justify-center text-mnemo-hud">
-                  Başlamak için aşağıdaki butona bas
-                </div>
-              )}
-            </main>
-
-            <div className="flex h-[7.25rem] shrink-0 flex-col items-center justify-center gap-2 pt-1">
-              {phase === "input" && (
-                <p className="text-sm text-mnemo-hud">
-                  Kalan süre: {formatRemainingSeconds(remainingMs)} sn
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-3">
+          {levelComplete ? (
+            <section className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-6 rounded-[6px] border border-mnemo-border bg-mnemo-cell px-6 py-8 text-center">
+              <h2 className="text-2xl font-semibold text-mnemo-primary-hover">
+                Bölüm Tamamlandı!
+              </h2>
+              <p className="text-mnemo-hud">
+                Son {MIN_ROUNDS_TO_COMPLETE} tur ortalaması: %{formattedAverage}
+              </p>
+              <p className="text-sm text-mnemo-hud">
+                Primus şu an tek seviyeli — yeni seviyeler yakında eklenecek.
+              </p>
+              <Link to="/" className={secondaryButtonClassName}>
+                Ana Sayfaya Dön
+              </Link>
+            </section>
+          ) : (
+            <div className="mx-auto flex h-full min-h-0 w-full max-w-lg flex-col">
+              <div className="flex h-14 shrink-0 flex-col items-center justify-center gap-0.5">
+                <p
+                  className={`text-center text-lg font-semibold text-white sm:text-xl ${
+                    phase === "input" || phase === "result" ? "visible" : "invisible"
+                  }`}
+                >
+                  {phase === "input"
+                    ? taskLabel
+                    : phase === "result"
+                      ? targetsLabel
+                      : " "}
                 </p>
-              )}
+                <p
+                  className={`text-sm text-mnemo-hud ${
+                    phase === "input" ? "visible" : "invisible"
+                  }`}
+                >
+                  {phase === "input"
+                    ? `Kalan seçim: ${remainingSelections}`
+                    : " "}
+                </p>
+              </div>
 
-              {phase === "result" && (
-                <button type="button" className={buttonClassName} onClick={nextRound}>
-                  Sonraki Tur
-                </button>
-              )}
+              <main className="relative min-h-0 w-full flex-1">
+                {showBoard ? (
+                  <div className="absolute inset-0 m-auto aspect-square max-h-full max-w-full">
+                    <PrimusGrid
+                      board={board}
+                      phase={phase}
+                      playerInput={playerInput}
+                      wrongInputIndices={wrongInputIndices}
+                      resultMap={resultMap}
+                      onCellClick={handleCellClick}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex h-full items-center justify-center text-mnemo-hud">
+                    Başlamak için aşağıdaki butona bas
+                  </div>
+                )}
+              </main>
 
-              {phase === "idle" && (
-                <button type="button" className={buttonClassName} onClick={startRound}>
-                  Başla
-                </button>
-              )}
+              <div className="flex h-[7.25rem] shrink-0 flex-col items-center justify-center gap-2 pt-1">
+                {phase === "input" && (
+                  <p className="text-sm text-mnemo-hud">
+                    Kalan süre: {formatRemainingSeconds(remainingMs)} sn
+                  </p>
+                )}
+
+                {phase === "result" && (
+                  <button type="button" className={buttonClassName} onClick={nextRound}>
+                    Sonraki Tur
+                  </button>
+                )}
+
+                {phase === "idle" && (
+                  <button type="button" className={buttonClassName} onClick={startRound}>
+                    Başla
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -183,12 +183,39 @@ Primus karma mod — tur başına **asal** veya **kare/küp** hedefi. Gösterim 
 - Home kartları: Mnemo, Primus
 - Routing: `/mnemo`, `/primus`
 - Mimari: ayrı hook + sayfa (`usePrimus`, `PrimusGame`, `PrimusGrid` / `PrimusCell`); Mnemo `Grid` / `Cell` paylaşılmaz
+- Primus HUD’da `?` → Yardım; ilk `/primus` ziyaretinde Onboarding (aşağıda)
+
+**Yardım (HUD `?` butonu)**
+
+- Ayrı bileşen: `PrimusHelpModal` — Mnemo `HelpModal`’a dokunulmaz
+- Başlık: Nasıl Oynanır?
+- Maddeler:
+  1. Tahtada sayılar durur; sıra önemli değil
+  2. Tur tipi değişir: asallar veya kare/küpler
+  3. Kare/küp örneği: `2² = 4`, `3³ = 27`
+  4. Doğru hücreleri işaretle; yanlış tıklama turu bitirmez ama puanı düşürür
+  5. Aynı hücreye tekrar tıkla → seçimi geri al
+  6. Kalan seçim kadar hak; süre bitince veya hak bitince tur biter
+  7. Son 10 tur ortalaması %90+ → bölüm tamamlandı
+- Not: Mnemo Help güncellemesi (toggle vb.) sonraki sprint
+
+**Onboarding (ilk `/primus` ziyareti)**
+
+- Mnemo gibi çok adımlı: İleri / son adımda Başla
+- `localStorage` anahtarı: `primus_onboarding_seen`
+- Mnemo onboarding’ine dokunulmaz
+- Önerilen ~3–4 adım:
+  1. Primus nedir — sayılar tahtada durur, sıra yok
+  2. Asal vs kare/küp — üslü örnek (`2² = 4`, `3³ = 27`)
+  3. Toggle + kalan seçim
+  4. Süre / puan / hazır → Başla
 
 #### Sonraki
 
 - Bölüm 2–3, grid büyümesi, seviye geçişi (önce kare/küp Canlı’da otursun)
 - Fibonacci, aritmetik, geometrik diziler
 - Euclid / Omnemo kartları Home’da yok (ayrı kategoriler)
+- PrimusHelpModal + Primus onboarding implementasyonu (PRD Canlı’da tanımlı)
 
 ### Euclid (Geometri Kategorisi)
 

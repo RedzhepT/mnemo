@@ -203,6 +203,10 @@ Primus karma mod — tur başına **asal** veya **kare/küp** hedefi. Gösterim 
 
 - Mnemo gibi çok adımlı: İleri / son adımda Başla
 - `localStorage` anahtarı: `primus_onboarding_seen`
+- Son adımda Başla → `primus_onboarding_seen = "true"` yazılır
+- Bu anahtar `"true"` iken onboarding bir daha gösterilmez
+- Tekrar görmek için anahtar silinmeli (test/debug)
+- Yardım (`?`) her zaman açılabilir; onboarding’den bağımsız
 - Mnemo onboarding’ine dokunulmaz
 - Önerilen ~3–4 adım:
   1. Primus nedir — sayılar tahtada durur, sıra yok

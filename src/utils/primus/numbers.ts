@@ -248,6 +248,114 @@ export function formatTargetsLabel(
   return `Hedefler: ${formattedValues.join(", ")}`;
 }
 
+export interface NearestSquareCube {
+  root: number;
+  power: 2 | 3;
+  result: number;
+}
+
+export interface PrimusResultErrors {
+  missed: string[];
+  wrong: string[];
+}
+
+// En küçük asal böleni döner
+function getSmallestPrimeFactor(value: number): number {
+  if (value < 2) {
+    return value;
+  }
+
+  for (let divisor = 2; divisor * divisor <= value; divisor += 1) {
+    if (value % divisor === 0) {
+      return divisor;
+    }
+  }
+
+  return value;
+}
+
+// Sayıya en yakın tam kare veya tam küpü döner (mutlak fark en küçük)
+export function nearestSquareCube(value: number): NearestSquareCube {
+  const candidates: NearestSquareCube[] = [];
+
+  for (let root = 2; root <= 10; root += 1) {
+    candidates.push({ root, power: 2, result: root ** 2 });
+    candidates.push({ root, power: 3, result: root ** 3 });
+  }
+
+  return candidates.reduce((best, candidate) => {
+    const candidateDiff = Math.abs(value - candidate.result);
+    const bestDiff = Math.abs(value - best.result);
+
+    if (candidateDiff < bestDiff) {
+      return candidate;
+    }
+
+    if (candidateDiff === bestDiff && candidate.result < best.result) {
+      return candidate;
+    }
+
+    return best;
+  });
+}
+
+// Asal turu yanlış seçim metnini formatlar
+function formatPrimeWrongSelection(value: number): string {
+  const smallestFactor = getSmallestPrimeFactor(value);
+  const otherFactor = value / smallestFactor;
+
+  return `${value} → ${smallestFactor} × ${otherFactor} = ${value}`;
+}
+
+// Yanlış seçim metnini tur tipine göre formatlar
+export function formatWrongSelection(
+  value: number,
+  roundType: PrimusRoundType,
+): string {
+  if (roundType === "asal") {
+    return formatPrimeWrongSelection(value);
+  }
+
+  const nearest = nearestSquareCube(value);
+  const powerSymbol = nearest.power === 3 ? "³" : "²";
+
+  return `${value} → ${nearest.root}${powerSymbol} = ${nearest.result}`;
+}
+
+// Kaçırılan hedef metnini tur tipine göre formatlar
+export function formatMissedTarget(
+  value: number,
+  roundType: PrimusRoundType,
+): string {
+  if (roundType === "asal") {
+    return `${value} — asal sayı`;
+  }
+
+  return `${value} → ${formatSquareCubeTarget(value)}`;
+}
+
+// Result fazı Hatalar alt başlıklarını oluşturur
+export function buildResultErrors(
+  board: number[],
+  targetIndices: number[],
+  wrongInputIndices: number[],
+  resultMap: Record<number, "correct" | "wrong" | "missed">,
+  roundType: PrimusRoundType,
+): PrimusResultErrors {
+  const missed = targetIndices
+    .filter((index) => resultMap[index] === "missed")
+    .map((index) => board[index])
+    .sort((a, b) => a - b)
+    .map((value) => formatMissedTarget(value, roundType));
+
+  const wrong = wrongInputIndices
+    .map((index) => board[index])
+    .sort((a, b) => a - b)
+    .map((value) => formatWrongSelection(value, roundType));
+
+  return { missed, wrong };
+}
+
 // Asal turu tahtası üretir
 function generatePrimeBoard(config?: GenerateBoardConfig): PrimusBoard {
   const cellCount = config?.cellCount ?? PRIMUS_CELL_COUNT;
@@ -390,9 +498,14 @@ export function generateBoard(
   return generatePrimeBoard(config);
 }
 
-// Input fazı görev metnini tur tipine göre döner
+// Briefing / görev metnini tur tipine göre döner
 export function getRoundTaskLabel(roundType: PrimusRoundType): string {
   return roundType === "asal"
     ? "Asal sayıları bul"
     : "Kare ve küpleri bul";
+}
+
+// Briefing fazı kısa örnek metnini tur tipine göre döner
+export function getBriefingExample(roundType: PrimusRoundType): string {
+  return roundType === "asal" ? "2, 3, 11" : "2² = 4, 3³ = 27";
 }

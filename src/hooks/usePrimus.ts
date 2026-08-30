@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   MIN_ROUNDS_TO_COMPLETE,
+  PRIMUS_BRIEFING_MS,
   PRIMUS_LEVEL,
   PRIMUS_LEVEL_COMPLETE_THRESHOLD,
   PRIMUS_MAX_ROUND_HISTORY,
@@ -14,7 +15,7 @@ import {
 } from "../utils/primus/numbers";
 import { calculateScore } from "../utils/scoring";
 
-export type PrimusPhase = "idle" | "input" | "result";
+export type PrimusPhase = "idle" | "briefing" | "input" | "result";
 
 export type PrimusResultStatus = "correct" | "wrong" | "missed";
 
@@ -45,6 +46,7 @@ export interface UsePrimusReturn {
   handleCellClick: (index: number) => void;
   startRound: () => void;
   nextRound: () => void;
+  skipBriefing: () => void;
 }
 
 // Tur geçmişine yeni skoru ekler ve sliding window uygular
@@ -112,7 +114,9 @@ export function usePrimus(): UsePrimusReturn {
   const recentRoundTypesRef = useRef<PrimusRoundType[]>([]);
   const inputStartedAtRef = useRef(0);
   const timerRef = useRef<number | null>(null);
+  const briefingTimerRef = useRef<number | null>(null);
   const finishRoundRef = useRef<() => void>(() => {});
+  const beginInputPhaseRef = useRef<() => void>(() => {});
 
   phaseRef.current = phase;
   boardRef.current = board;
@@ -126,6 +130,14 @@ export function usePrimus(): UsePrimusReturn {
     if (timerRef.current !== null) {
       window.clearInterval(timerRef.current);
       timerRef.current = null;
+    }
+  }, []);
+
+  // Briefing fazı zamanlayıcısını durdurur
+  const stopBriefingTimer = useCallback((): void => {
+    if (briefingTimerRef.current !== null) {
+      window.clearTimeout(briefingTimerRef.current);
+      briefingTimerRef.current = null;
     }
   }, []);
 
@@ -217,9 +229,44 @@ export function usePrimus(): UsePrimusReturn {
     }, 50);
   }, [stopTimer]);
 
-  // Yeni tur başlatır: tur tipi seçer, tahta üretir ve input fazına geçer
+  // Briefing sonrası input fazına geçer ve oyun süresini başlatır
+  const beginInputPhase = useCallback((): void => {
+    setPhase("input");
+    startTimer();
+  }, [startTimer]);
+
+  beginInputPhaseRef.current = beginInputPhase;
+
+  // Briefing fazını başlatır; süre dolunca veya skip ile input'a geçer
+  const startBriefingPhase = useCallback((): void => {
+    stopBriefingTimer();
+    stopTimer();
+    setPhase("briefing");
+    setRemainingMs(PRIMUS_ROUND_TIME_MS);
+
+    briefingTimerRef.current = window.setTimeout(() => {
+      briefingTimerRef.current = null;
+
+      if (phaseRef.current === "briefing") {
+        beginInputPhaseRef.current();
+      }
+    }, PRIMUS_BRIEFING_MS);
+  }, [stopBriefingTimer, stopTimer]);
+
+  // Briefing fazını erken kapatır (tıklama veya Space)
+  const skipBriefing = useCallback((): void => {
+    if (phaseRef.current !== "briefing") {
+      return;
+    }
+
+    stopBriefingTimer();
+    beginInputPhaseRef.current();
+  }, [stopBriefingTimer]);
+
+  // Yeni tur başlatır: tahta üretir, briefing fazına geçer
   const startRound = useCallback((): void => {
     stopTimer();
+    stopBriefingTimer();
 
     const nextRoundType = pickRoundType(recentRoundTypesRef.current);
     const generatedBoard = generateBoard(nextRoundType);
@@ -242,9 +289,9 @@ export function usePrimus(): UsePrimusReturn {
     setResultMap({});
     setScore(0);
     setElapsedMs(0);
-    setPhase("input");
-    startTimer();
-  }, [startTimer, stopTimer]);
+
+    startBriefingPhase();
+  }, [startBriefingPhase, stopBriefingTimer, stopTimer]);
 
   // Result fazından doğrudan yeni tur başlatır (idle'a düşmez)
   const nextRound = useCallback((): void => {
@@ -301,6 +348,26 @@ export function usePrimus(): UsePrimusReturn {
     [],
   );
 
+  // Briefing fazında Space ile erken geçiş
+  useEffect(() => {
+    if (phase !== "briefing") {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.code === "Space") {
+        event.preventDefault();
+        skipBriefing();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [phase, skipBriefing]);
+
   // Kayıtlı ilerlemeyi yükle
   useEffect(() => {
     const savedGame = readSavedGame();
@@ -320,8 +387,9 @@ export function usePrimus(): UsePrimusReturn {
   useEffect(() => {
     return () => {
       stopTimer();
+      stopBriefingTimer();
     };
-  }, [stopTimer]);
+  }, [stopBriefingTimer, stopTimer]);
 
   return {
     phase,
@@ -341,5 +409,6 @@ export function usePrimus(): UsePrimusReturn {
     handleCellClick,
     startRound,
     nextRound,
+    skipBriefing,
   };
 }

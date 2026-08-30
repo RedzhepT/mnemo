@@ -23,6 +23,7 @@ export const MIN_ROUNDS_TO_COMPLETE = DEBUG_MODE ? 4 : 10
 // Primus oyun sabitleri
 export const PRIMUS_GRID_SIZE = 4
 export const PRIMUS_CELL_COUNT = PRIMUS_GRID_SIZE * PRIMUS_GRID_SIZE
+export const PRIMUS_BRIEFING_MS = 4000
 export const PRIMUS_ROUND_TIME_MS = 8000
 export const PRIMUS_TARGET_COUNT = 3
 export const PRIMUS_ROUND_TYPE_WINDOW = 5

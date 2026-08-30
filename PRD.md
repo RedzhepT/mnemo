@@ -110,7 +110,6 @@ Primus karma mod — tur başına **asal** veya **kare/küp** hedefi. Gösterim 
 
 - Tur başına rastgele: `asal` veya `kareKup`
 - Son 5 turda her iki tip en az bir kez gelmeli (garanti)
-- Input fazında görev metni tipe göre: "Asal sayıları bul" / "Kare ve küpleri bul"
 
 **Tahta (ortak)**
 
@@ -122,6 +121,8 @@ Primus karma mod — tur başına **asal** veya **kare/küp** hedefi. Gösterim 
 
 - Hedef: asallar (3 adet)
 - Hedef dışı: yalnızca bileşik
+- **Invariant:** Tahtada tam N (bölüm 1: 3) asal vardır; hepsi hedeftir
+- **Invariant:** Hedef dışı hücreler yalnızca bileşiktir; tahtada hedef olmayan asal yoktur
 
 **Kare/küp turu**
 
@@ -129,11 +130,28 @@ Primus karma mod — tur başına **asal** veya **kare/küp** hedefi. Gösterim 
 - Hem kare hem küp olan sayı (ör. 64) tek hedef sayılır
 - Hedef dışı: kare/küp olmayan her sayı (asal dahil — tıklanınca yanlış)
 - 1 yasak
+- **Invariant:** Tahtada tam N kare/küp vardır; hepsi hedeftir
+- **Invariant:** Hedef dışı hücreler kare/küp değildir; tahtada hedef olmayan kare/küp yoktur
+- (4 hedef olup 4'e tıklama = doğru; hedef dışı kare/küp senaryosu geçersiz)
 
 **Fazlar**
 
-- İlk tur: `idle` → `input` → `result` (`showing` yok)
-- Sonraki turlar: `result` → “Sonraki Tur” → doğrudan `input` (`idle`’a düşmez)
+- İlk tur: `idle` → [Başla] → `briefing` → `input` → `result` (`showing` yok)
+- Sonraki turlar: `result` → [Sonraki Tur] → `briefing` → `input` → `result` (`idle`'a düşmez)
+
+**Görev önizleme (briefing)**
+
+- Başla veya Sonraki Tur sonrası, tahta açılmadan önce tam ekran layer
+- Süre: 4 sn (`PRIMUS_BRIEFING_MS = 4000`)
+- Tahta bu fazda gizli; oyun süresi (8 sn) briefing sırasında işlemez
+- İçerik (tipe göre):
+  - Asal: "Asal sayıları bul" + kısa örnek (ör. 2, 3, 11)
+  - Kare/küp: "Kare ve küpleri bul" + kısa örnek (ör. 2² = 4, 3³ = 27)
+- Erken geçiş: tıklama veya Space ile layer kapanır
+- Layer bitince → `input` fazı; 8 sn timer burada başlar
+- Input fazında görev cümlesi de görünür (layer + input çift hatırlatma):
+  - Asal: "Asal sayıları bul"
+  - Kare/küp: "Kare ve küpleri bul"
 
 **Input (ortak — mevcut kurallar korunur)**
 
@@ -143,13 +161,14 @@ Primus karma mod — tur başına **asal** veya **kare/küp** hedefi. Gösterim 
 - **Bitir** butonu yok
 - Tur sonu (hangisi önce gelirse): süre dolunca; veya mevcut seçim sayısı (doğru + yanlış) === hedef sayısı (3)
 - Erken bitişte `elapsedMs` gerçek geçen süre (hız puanı artar)
-- Kalan seçim göstergesi (yalnızca input, grid üstünde): `Kalan seçim: N` — N = hedef sayısı − (doğru + yanlış seçim); seçimde azalır, geri alınca artar; idle/result’ta görünmez
+- Kalan seçim göstergesi (yalnızca input, grid üstünde): `Kalan seçim: N` — N = hedef sayısı − (doğru + yanlış seçim); seçimde azalır, geri alınca artar; idle/briefing/result’ta görünmez
 
 **Süre**
 
-- 8 saniye (`PRIMUS_ROUND_TIME_MS = 8000`)
-- İlk tur: idle’da “Başla” ile tur ve süre başlar
-- Result’ta “Sonraki Tur” doğrudan yeni tahta + timer başlatır (idle’a dönmez); `levelComplete` iken no-op
+- Oyun süresi: 8 saniye (`PRIMUS_ROUND_TIME_MS = 8000`) — yalnızca `input` fazında
+- Briefing: 4 saniye (`PRIMUS_BRIEFING_MS = 4000`); erken geçiş mümkün
+- İlk tur: idle’da “Başla” → briefing → input timer başlar
+- Result’ta “Sonraki Tur” → briefing → input; `levelComplete` iken no-op
 
 **Renklendirme**
 
@@ -162,6 +181,31 @@ Primus karma mod — tur başına **asal** veya **kare/küp** hedefi. Gösterim 
 - Grid üstünde `Hedefler:` — küçükten büyüğe
 - Kare/küp formatı: üslü gösterim (ör. `2² = 4`, `3³ = 27`); asal turunda düz sayı listesi
 - Renklendirme aynı (yeşil/kırmızı/mavi)
+
+**Result — Hatalar** (yalnızca result fazı, `Hedefler` altında)
+
+- Yanlış tıklama veya kaçırılan hedef yoksa `Hatalar` bloğu hiç görünmez
+- İki alt başlık (boş olan gösterilmez):
+  - **Kaçırılanlar:** hedef seçilmedi (`missed`, mavi hücreler)
+  - **Yanlış seçimler:** `wrongInputIndices`
+- Sıra: her alt başlıkta sayı küçükten büyüğe
+
+**Asal turu — Yanlış seçim (bileşik tıklama):**
+
+- Format: `27 → 3 × 9 = 27` (en küçük asal bölen × diğer çarpan)
+- Yanlış tıklanan asal (nadir): aynı faktörizasyon kuralı
+
+**Asal turu — Kaçırılan:**
+
+- Format: `11 — asal sayı`
+
+**Kare/küp turu — Yanlış seçim (kare/küp olmayan):**
+
+- Format: `66 → 8² = 64` (sayıya en yakın tam kare veya tam küp; mutlak fark en küçük)
+
+**Kare/küp turu — Kaçırılan:**
+
+- Format: Hedefler ile aynı üslü: `27 → 3³ = 27`
 
 **Puanlama**
 

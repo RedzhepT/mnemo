@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { PrimusBriefing } from "../components/primus/PrimusBriefing";
 import { PrimusGrid } from "../components/primus/PrimusGrid";
 import {
   PrimusHelpButton,
@@ -12,6 +13,7 @@ import {
 import { usePrimus } from "../hooks/usePrimus";
 import { MIN_ROUNDS_TO_COMPLETE } from "../utils/constants";
 import {
+  buildResultErrors,
   formatTargetsLabel,
   getRoundTaskLabel,
 } from "../utils/primus/numbers";
@@ -61,6 +63,7 @@ export function PrimusGame() {
     handleCellClick,
     startRound,
     nextRound,
+    skipBriefing,
   } = usePrimus();
 
   const [helpOpen, setHelpOpen] = useState(false);
@@ -70,7 +73,7 @@ export function PrimusGame() {
 
   const roundAverage = calculateRoundAverage(roundHistory);
   const formattedAverage = roundAverage.toFixed(1);
-  const showBoard = board.length > 0;
+  const showBoard = board.length > 0 && phase !== "briefing";
   const remainingSelections = Math.max(
     0,
     targetIndices.length - (playerInput.length + wrongInputIndices.length),
@@ -80,6 +83,18 @@ export function PrimusGame() {
     .sort((a, b) => a - b);
   const targetsLabel = formatTargetsLabel(targetValues, roundType);
   const taskLabel = getRoundTaskLabel(roundType);
+  const resultErrors =
+    phase === "result"
+      ? buildResultErrors(
+          board,
+          targetIndices,
+          wrongInputIndices,
+          resultMap,
+          roundType,
+        )
+      : { missed: [], wrong: [] };
+  const hasResultErrors =
+    resultErrors.missed.length > 0 || resultErrors.wrong.length > 0;
 
   return (
     <>
@@ -87,6 +102,10 @@ export function PrimusGame() {
 
       {showOnboarding && (
         <PrimusOnboarding onComplete={() => setShowOnboarding(false)} />
+      )}
+
+      {phase === "briefing" && (
+        <PrimusBriefing roundType={roundType} onSkip={skipBriefing} />
       )}
 
       <div className="flex h-svh min-h-0 flex-col overflow-hidden bg-mnemo-bg">
@@ -130,7 +149,13 @@ export function PrimusGame() {
             </section>
           ) : (
             <div className="mx-auto flex h-full min-h-0 w-full max-w-lg flex-col">
-              <div className="flex h-14 shrink-0 flex-col items-center justify-center gap-0.5">
+              <div
+                className={`flex shrink-0 flex-col items-center justify-center gap-0.5 px-1 ${
+                  phase === "result" && hasResultErrors
+                    ? "min-h-14 max-h-32 overflow-y-auto py-1"
+                    : "h-14"
+                }`}
+              >
                 <p
                   className={`text-center text-lg font-semibold text-white sm:text-xl ${
                     phase === "input" || phase === "result" ? "visible" : "invisible"
@@ -142,6 +167,21 @@ export function PrimusGame() {
                       ? targetsLabel
                       : " "}
                 </p>
+                {phase === "result" && hasResultErrors && (
+                  <div className="w-full text-center text-xs text-mnemo-hud sm:text-sm">
+                    <p className="font-medium text-white">Hatalar</p>
+                    {resultErrors.missed.length > 0 && (
+                      <p>
+                        Kaçırılanlar: {resultErrors.missed.join(", ")}
+                      </p>
+                    )}
+                    {resultErrors.wrong.length > 0 && (
+                      <p>
+                        Yanlış seçimler: {resultErrors.wrong.join(", ")}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <p
                   className={`text-sm text-mnemo-hud ${
                     phase === "input" ? "visible" : "invisible"
@@ -167,7 +207,9 @@ export function PrimusGame() {
                   </div>
                 ) : (
                   <div className="flex h-full items-center justify-center text-mnemo-hud">
-                    Başlamak için aşağıdaki butona bas
+                    {phase === "briefing"
+                      ? " "
+                      : "Başlamak için aşağıdaki butona bas"}
                   </div>
                 )}
               </main>

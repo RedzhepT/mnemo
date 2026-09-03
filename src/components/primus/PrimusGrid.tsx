@@ -1,9 +1,9 @@
-import { PRIMUS_GRID_SIZE } from "../../utils/constants";
 import type { PrimusPhase, PrimusResultMap } from "../../hooks/usePrimus";
 import { PrimusCell } from "./PrimusCell";
 
 export interface PrimusGridProps {
   board: number[];
+  gridSize: number;
   phase: PrimusPhase;
   playerInput: number[];
   wrongInputIndices: number[];
@@ -11,9 +11,10 @@ export interface PrimusGridProps {
   onCellClick: (index: number) => void;
 }
 
-// 4×4 Primus sayı tahtasını render eder
+// Primus sayı tahtasını render eder
 export function PrimusGrid({
   board,
+  gridSize,
   phase,
   playerInput,
   wrongInputIndices,
@@ -26,14 +27,14 @@ export function PrimusGrid({
     <div
       className="grid h-full w-full gap-1"
       style={{
-        gridTemplateColumns: `repeat(${PRIMUS_GRID_SIZE}, minmax(0, 1fr))`,
+        gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
       }}
     >
       {board.map((value, index) => (
         <PrimusCell
           key={index}
           index={index}
-          gridSize={PRIMUS_GRID_SIZE}
+          gridSize={gridSize}
           value={value}
           phase={phase}
           isSelected={selectedIndices.has(index)}

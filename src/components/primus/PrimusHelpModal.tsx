@@ -2,8 +2,8 @@ import { useState } from "react";
 
 const PRIMUS_HELP_RULES = [
   "Tahtada sayılar durur; sıra önemli değil",
-  "Tur tipi değişir: asallar veya kare/küpler",
-  "Kare/küp örneği: 2² = 4, 3³ = 27",
+  "Bölüme göre görev: asallar, kareler, küpler veya karışık (random) olabilir",
+  "Örnekler: 2² = 4 (kare), 3³ = 27 (küp)",
   "Doğru hücreleri işaretle; yanlış tıklama turu bitirmez ama puanı düşürür",
   "Aynı hücreye tekrar tıkla → seçimi geri al",
   "Kalan seçim kadar hak; süre bitince veya hak bitince tur biter",

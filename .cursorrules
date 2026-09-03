@@ -29,9 +29,11 @@ src/
       PrimusCell.tsx      → Primus tek hücre
       PrimusHelpModal.tsx → Primus yardım (? butonu + modal)
       PrimusOnboarding.tsx → ilk /primus tanıtımı
+      PrimusBriefing.tsx  → görev önizleme layer
+      PrimusLevelSelect.tsx → bölüm seçimi (19)
   hooks/
     useGame.ts            → Mnemo oyun state
-    usePrimus.ts          → Primus oyun state
+    usePrimus.ts          → Primus oyun state (campaign + practice)
   lib/
     supabase.ts           → supabase client
     auth.ts               → oturum / auth yardımcıları
@@ -42,6 +44,7 @@ src/
     constants.ts          → sabitler (magic number yok)
     primus/
       numbers.ts          → Primus tahta / tur tipi / sayı yardımcıları
+      levels.ts           → Primus 19 bölüm config + soru modları
 vercel.json               → SPA rewrite (/primus yenilemede 404 olmasın)
 
 ## Mimari
@@ -58,7 +61,7 @@ vercel.json               → SPA rewrite (/primus yenilemede 404 olmasın)
 
 ## Oyun Mantığı (kısa)
 - Mnemo: idle | showing | input | result; sıra önemli; emoji modu bölüm 17–32
-- Primus: idle | input | result; gösterim yok; tur tipi asal | kareKup; sıra önemsiz
+- Primus: idle | briefing | input | result; campaign 19 bölüm (asal|kare|kup|kareKup); practice DEBUG alıştırma
 - Detay (grid boyutları, süreler, hedefler, puan) → PRD.md
 
 ## Branch

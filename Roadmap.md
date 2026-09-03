@@ -32,9 +32,12 @@
 
 ### Sprint 2 — Primus seviyeleri
 
-- Bölüm 1–3 (1+2 basamak; bölüm 2–3 asal 2–6)
-- Sonraki Bölüm, level config, `primus/levels.ts`
-- PRD Sonraki → Canlı taşı
+- `utils/primus/levels.ts` — 19 bölüm config (grid, N, basamak, soru modu, süre)
+- Tur tipleri: `kare` + `kup` ekle; bölüm soru modları `fixed*` / `random3` / `random2`
+- `usePrimus` level state, Sonraki Bölüm, `PrimusLevelSelect`
+- Alıştırma / DEBUG HUD girişi (eski 4×4 karma + son-5 tip garantisi; `primus_practice_save`)
+- PRD Canlı / Sonraki senkron
+- Referans tablo: `Mnemo-Notlar/primus-seviyeler.csv`
 
 ### Sprint 3 — Mnemo Help güncellemesi
 
@@ -49,15 +52,15 @@
 ### Sprint 5 — Primus ek tur tipleri
 
 - Fibonacci, aritmetik, geometrik diziler
-- Tur tipi rotasyonu genişlet
+- Tur tipi rotasyonu genişlet (grid / 3 basamak artık Sprint 2 seviyelerinde)
 
 ### Sprint 6+ — Yeni kategoriler & meta
 
-- Grid 5×5→7×7, 3 basamak
 - Euclid (ayrı sayfa)
 - Home kartları: Euclid, Omnemo
 - Stoacı öğütler, Katsayı çarkı
 - Global leaderboard, mesajlaşma
+- (Grid 5×5→7×7 ve 3 basamak: Sprint 2 Primus config’te)
 
 ## Bilinçli ertelenen
 
@@ -68,5 +71,6 @@
 ## Referanslar
 
 - Ürün kuralları → [PRD.md](./PRD.md)
+- Primus seviye tablosu → `Mnemo-Notlar/primus-seviyeler.csv`
 - Git akışı → `Mnemo-Notlar/github-merge-sirasi.md` (varsa)
 - Agent sprint akışı: Ask → PRD → kısa Agent prompt

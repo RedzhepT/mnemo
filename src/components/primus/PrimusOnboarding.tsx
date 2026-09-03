@@ -9,9 +9,9 @@ const PRIMUS_ONBOARDING_STEPS = [
       "Sayıları tanıma ve hızlı seçim oyunu. Tahtada sayılar baştan durur; hatırlama sırası yoktur.",
   },
   {
-    title: "Asal veya Kare/Küp",
+    title: "Asal, Kare, Küp",
     description:
-      "Her turda görev değişir: asalları veya kare/küpleri bul. Örnek: 2² = 4, 3³ = 27.",
+      "Bölüme göre görev değişir: yalnız asallar, yalnız kareler, yalnız küpler veya random karışık. Örnek: 2² = 4, 3³ = 27.",
   },
   {
     title: "Seçim ve Toggle",
@@ -21,7 +21,7 @@ const PRIMUS_ONBOARDING_STEPS = [
   {
     title: "Süre, Puan, Hazır",
     description:
-      "8 saniye veya kalan seçim bitince tur biter. Hızlı ve doğru ol → yüksek puan. Son 10 tur ortalaması %90+ → bölüm tamamlandı. İyi oyunlar!",
+      "Süre veya kalan seçim bitince tur biter. Hızlı ve doğru ol → yüksek puan. Son 10 tur ortalaması %90+ → sonraki bölüm. İyi oyunlar!",
   },
 ] as const;
 
